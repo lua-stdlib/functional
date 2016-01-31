@@ -1,0 +1,4 @@
+.DS_Store
+/doc/*
+!/doc/config.ld.in
+/functional-*.src.rock
