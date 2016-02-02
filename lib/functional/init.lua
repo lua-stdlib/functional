@@ -8,7 +8,6 @@
 ]]
 
 
-local _ENV		= _ENV
 local getmetatable	= getmetatable
 local loadstring	= loadstring or load
 local next		= next
@@ -26,21 +25,17 @@ local table_unpack	= table.unpack or unpack
 
 local _			= require "functional._base"
 
+local argscheck		= _.typecheck and _.typecheck.argscheck
 local ipairs		= _.ipairs
 local len		= _.len
 local pack		= _.pack
 local pairs		= _.pairs
 local serialize		= _.serialize
-local strict		= _.strict
+
+local _ENV		= _.strict and _.strict {} or {}
 
 _ = nil
 
-
--- Unless strict was disabled, check for use of undeclared variables in
--- this module.
-if strict ~= nil then
-  _ENV = strict {}
-end
 
 
 -- FIXME: Figure these two out:
@@ -510,8 +505,7 @@ end
 
 
 local function X (decl, fn)
-  if argscheck == nil then return fn end
-  return argscheck ("functional." .. decl, fn)
+  return argscheck and argscheck ("functional." .. decl, fn) or fn
 end
 
 return {

@@ -13,7 +13,6 @@
 ]]
 
 
-local _ENV		= _ENV
 local error		= error
 local getmetatable	= getmetatable
 local next		= next
@@ -28,17 +27,11 @@ local table_unpack	= table.unpack or unpack
 
 local _			= require "functional._base"
 
-local strict		= _.strict
 local toqstring		= _.toqstring
 
+local _ENV		= _.strict and _.strict {} or {}
+
 _ = nil
-
-
--- Unless strict was disabled, check for use of undeclared variables in
--- this module.
-if strict ~= nil then
-  _ENV = strict {}
-end
 
 
 

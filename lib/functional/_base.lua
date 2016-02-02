@@ -60,6 +60,7 @@ do
     else
       -- ...otherwise, the strict function is not available at all!
       _DEBUG.strict	= false
+      strict		= false
     end
   end
 
@@ -72,6 +73,7 @@ do
     else
       -- ...otherwise, the strict function is not available at all!
       _DEBUG.argcheck	= false
+      typecheck		= false
     end
   end
 end
