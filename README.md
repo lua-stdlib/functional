@@ -1,5 +1,5 @@
-Standard Lua libraries
-======================
+Functional Programming with Lua
+===============================
 
 by the [functional project][github]
 
