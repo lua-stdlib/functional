@@ -31,5 +31,6 @@ build = {
       ['functional._base'] = 'lib/functional/_base.lua',
       ['functional.operator'] = 'lib/functional/operator.lua',
       ['functional.tuple'] = 'lib/functional/tuple.lua',
+      ['functional.version'] = 'lib/functional/version.lua',
    },
 }
