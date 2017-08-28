@@ -7,7 +7,7 @@ addons:
 
 env:
   global:
-    - _VERSION=1.0
+    - _VERSION=git
 
     - LUAJIT_DIR=luajit-2.0
     - LUAJIT_VER=2.0.4
