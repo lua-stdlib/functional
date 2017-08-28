@@ -5,6 +5,7 @@ by the [functional project][github]
 
 [![License](http://img.shields.io/:license-mit-blue.svg)](http://mit-license.org)
 [![travis-ci status](https://secure.travis-ci.org/lua-stdlib/functional.png?branch=master)](http://travis-ci.org/lua-stdlib/functional/builds)
+[![codecov.io](https://codecov.io/gh/lua-stdlib/functional/branch/master/graph/badge.svg)](https://codecov.io/gh/lua-stdlib/functional)
 [![Stories in Ready](https://badge.waffle.io/lua-stdlib/functional.png?label=ready&title=Ready)](https://waffle.io/lua-stdlib/functional)
 
 
