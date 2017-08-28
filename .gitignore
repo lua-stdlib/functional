@@ -1,4 +1,5 @@
 .DS_Store
+/build-aux/config.ld
 /doc/*
-!/doc/config.ld.in
 /functional-*.src.rock
+/lib/functional/version.lua

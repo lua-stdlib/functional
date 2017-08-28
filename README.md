@@ -30,7 +30,7 @@ if they are installed.
 Installation
 ------------
 
-The simplest and best way to install stdlib is with [LuaRocks][]. To
+The simplest and best way to install functional is with [LuaRocks][]. To
 install the latest release):
 
 ```bash

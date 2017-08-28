@@ -4,21 +4,41 @@ MKDIR	= mkdir -p
 SED	= sed
 SPECL	= specl
 
+VERSION	= 1.0
+
 luadir	= lib/functional
-SOURCES = $(luadir)/_base.lua $(luadir)/init.lua $(luadir)/operator.lua $(luadir)/tuple.lua
+SOURCES =				\
+	$(luadir)/_base.lua		\
+	$(luadir)/init.lua		\
+	$(luadir)/operator.lua		\
+	$(luadir)/tuple.lua		\
+	$(luadir)/version.lua		\
+	$(NOTHING_ELSE)
 
 
-all: doc
+all: $(luadir)/version.lua doc
 
-doc: doc/config.ld $(SOURCES)
-	$(LDOC) -c doc/config.ld .
 
-doc/config.ld: doc/config.ld.in
-	version=`LUA_PATH=$$(pwd)'/lib/?.lua;;' $(LUA) -e 'io.stdout:write(require"functional._base"._VERSION)'`; \
-	$(SED) -e "s,@PACKAGE_VERSION@,$$version," '$<' > '$@'
+$(luadir)/version.lua: .FORCE
+	@echo 'return "Functional Programming Libraries / $(VERSION)"' > '$@T';	\
+	if cmp -s '$@' '$@T'; then						\
+	    rm -f '$@T';							\
+	else									\
+	    echo 'echo "Functional Programming Libraries / $(VERSION)" > $@';	\
+	    mv '$@T' '$@';							\
+	fi
+
+doc: build-aux/config.ld $(SOURCES)
+	$(LDOC) -c build-aux/config.ld .
+
+build-aux/config.ld: build-aux/config.ld.in
+	$(SED) -e "s,@PACKAGE_VERSION@,$(VERSION)," '$<' > '$@'
 
 
 CHECK_ENV = LUA=$(LUA)
 
 check:
 	LUA=$(LUA) $(SPECL) $(SPECL_OPTS) specs/*_spec.yaml
+
+
+.FORCE:
