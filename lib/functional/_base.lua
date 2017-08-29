@@ -44,11 +44,11 @@ local function toqstring(x)
 end
 
 
-local function render(x, roots)
+local function serialize(x, roots)
    roots = roots or {}
 
    local function stop_roots(x)
-      return roots[x] or render(x, copy(roots))
+      return roots[x] or serialize(x, copy(roots))
    end
 
    if type(x) ~= 'table' or getmetamethod(x, '__tostring') then
@@ -70,16 +70,6 @@ local function render(x, roots)
 
       return concat(buf) -- stringify buffer
    end
-end
-
-
-local function serialize(...)
-   local seq = pack(...)
-   local buf = {}
-   for i = 1, seq.n do
-      buf[i] = render(seq[i], serialize_vtable)
-   end
-   return concat(buf, ',')
 end
 
 

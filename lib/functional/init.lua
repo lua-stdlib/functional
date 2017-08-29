@@ -18,6 +18,7 @@ local _ENV = require 'std.normalize' {
 local coroutine_wrap	= coroutine.wrap
 local coroutine_yield	= coroutine.yield
 local math_ceil		= math.ceil
+local table_concat	= table.concat
 local table_remove	= table.remove
 
 
@@ -334,8 +335,18 @@ local function id(...)
 end
 
 
+local function multiserialize(...)
+   local seq = pack(...)
+   local buf = {}
+   for i = 1, seq.n do
+      buf[i] = serialize(seq[i])
+   end
+   return table_concat(buf, ',')
+end
+
+
 local function memoize(fn, mnemonic)
-   mnemonic = mnemonic or serialize
+   mnemonic = mnemonic or multiserialize
 
    return setmetatable({}, {
       __call = function(self, ...)
@@ -367,8 +378,8 @@ local lambda = memoize(function(s)
          expr = [[
             return function(...)
                local _1,_2,_3,_4,_5,_6,_7,_8,_9 = ...
-	   local _ = _1
-	   return ]] .. body .. [[
+	       local _ = _1
+	       return ]] .. body .. [[
             end
          ]]
       end
