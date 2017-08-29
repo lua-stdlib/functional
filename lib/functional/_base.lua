@@ -1,15 +1,10 @@
-local _ENV		= _ENV
-local ipairs		= ipairs
-local pairs		= pairs
-local pcall		= pcall
-local require		= require
-local setmetatable	= setmetatable
-local tostring		= tostring
-local type		= type
+local _ENV = require 'std.normalize' {
+   'string',
+   'table',
+}
 
 local format	= string.format
 local concat	= table.concat
-local pack	= table.pack or pack or false
 local sort	= table.sort
 
 

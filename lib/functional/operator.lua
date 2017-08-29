@@ -5,19 +5,11 @@
 ]]
 
 
-local tostring		= tostring
-local type		= type
 
 
-local _			= require 'functional._base'
+local _ENV = require 'std.normalize' {}
 
-local len		= _.len
-local serialize		= _.serialize
-local _tostring		= _.tostring
-
-local _ENV		= _.strict and _.strict {} or {}
-
-_ = nil
+local serialize = require 'functional._base'.serialize
 
 
 
@@ -52,7 +44,7 @@ return {
    --   --> '=> 1000010010'
    --   functional.foldl(concat, '=> ', {10000, 100, 10})
    concat = function(a, b)
-     return _tostring(a) .. _tostring(b)
+     return tostring(a) .. tostring(b)
    end,
 
    --- Equivalent to `#` operation, but respecting `__len` even on Lua 5.1.

@@ -8,31 +8,23 @@
 ]]
 
 
-local getmetatable	= getmetatable
-local loadstring	= loadstring or load
-local next		= next
-local pcall		= pcall
-local select		= select
-local setmetatable	= setmetatable
-local type		= type
+local _ENV = require 'std.normalize' {
+   'coroutine',
+   'math',
+   'table',
+}
+
 
 local coroutine_wrap	= coroutine.wrap
 local coroutine_yield	= coroutine.yield
 local math_ceil		= math.ceil
 local table_remove	= table.remove
-local table_unpack	= table.unpack or unpack
 
 
 local _			= require 'functional._base'
 
 local argscheck		= _.typecheck and _.typecheck.argscheck
-local ipairs		= _.ipairs
-local len		= _.len
-local pack		= _.pack
-local pairs		= _.pairs
 local serialize		= _.serialize
-
-local _ENV		= _.strict and _.strict {} or {}
 
 _ = nil
 
@@ -81,10 +73,10 @@ local function any(...)
       for i = 1, fns.n do
          argt = pack(fns[i](...))
          if argt[1] ~= nil then
-            return table_unpack(argt, 1, argt.n)
+            return unpack(argt, 1, argt.n)
          end
       end
-      return table_unpack(argt, 1, argt.n)
+      return unpack(argt, 1, argt.n)
    end
 end
 
@@ -114,11 +106,11 @@ local function bind(fn, bound)
 
       -- Even if there are gaps remaining above *i*, pass at least *n* args.
       if n >= i then
-         return fn(table_unpack(argt, 1, n))
+         return fn(unpack(argt, 1, n))
       end
 
       -- Otherwise, we filled gaps beyond *n*, and pass that many args.
-      return fn(table_unpack(argt, 1, i - 1))
+      return fn(unpack(argt, 1, i - 1))
    end
 end
 
@@ -195,9 +187,9 @@ local function compose(...)
    return function(...)
       local argt = pack(...)
       for i = 1, fns.n do
-         argt = pack(fns[i](table_unpack(argt, 1, argt.n)))
+         argt = pack(fns[i](unpack(argt, 1, argt.n)))
       end
-      return table_unpack(argt, 1, argt.n)
+      return unpack(argt, 1, argt.n)
    end
 end
 
@@ -233,7 +225,7 @@ local function filter(pfn, ifn, ...)
       ifn, argt = pairs, pack(ifn, ...)
    end
 
-   local nextfn, state, k = ifn(table_unpack(argt, 1, argt.n))
+   local nextfn, state, k = ifn(unpack(argt, 1, argt.n))
 
    local t = pack(nextfn(state, k))		-- table of iteration 1
    local arity = #t				-- How many return values from ifn?
@@ -241,7 +233,7 @@ local function filter(pfn, ifn, ...)
    if arity == 1 then
       local v = t[1]
       while v ~= nil do				-- until iterator returns nil
-         if pfn(table_unpack(t, 1, t.n)) then	-- pass all iterator results to p
+         if pfn(unpack(t, 1, t.n)) then	-- pass all iterator results to p
             r[#r + 1] = v
          end
 
@@ -261,7 +253,7 @@ local function filter(pfn, ifn, ...)
       --          current t with arity > 1 is the correct next value to use
       while t[1] ~= nil do
          local k = t[1]
-         if pfn(table_unpack(t, 1, t.n)) then
+         if pfn(unpack(t, 1, t.n)) then
             r[k] = t[2]
          end
          t = pack(nextfn(state, k))
@@ -285,13 +277,13 @@ local function reduce(fn, d, ifn, ...)
       argt = pack(...)
    end
 
-   local nextfn, state, k = ifn(table_unpack(argt, 1, argt.n))
+   local nextfn, state, k = ifn(unpack(argt, 1, argt.n))
    local t = pack(nextfn(state, k))		-- table of iteration 1
 
    local r = d					-- initialise accumulator
    while t[1] ~= nil do				-- until iterator returns nil
       k = t[1]
-      r = fn(r, table_unpack(t, 1, t.n))	-- pass all iterator results to fn
+      r = fn(r, unpack(t, 1, t.n))		-- pass all iterator results to fn
       t = pack(nextfn(state, k))		-- maintain loop invariant
    end
    return r
@@ -353,7 +345,7 @@ local function memoize(fn, mnemonic)
             t = pack(fn(...))
             self[k] = t
          end
-         return table_unpack(t, 1, t.n)
+         return unpack(t, 1, t.n)
       end
    })
 end
@@ -384,7 +376,7 @@ local lambda = memoize(function(s)
 
    local ok, fn
    if expr then
-      ok, fn = pcall(loadstring(expr))
+      ok, fn = pcall(load(expr))
    end
 
    -- Diagnose invalid input.
@@ -405,12 +397,12 @@ local function map(mapfn, ifn, ...)
       ifn, argt = pairs, pack(ifn, ...)
    end
 
-   local nextfn, state, k = ifn(table_unpack(argt, 1, argt.n))
+   local nextfn, state, k = ifn(unpack(argt, 1, argt.n))
    local mapargs = pack(nextfn(state, k))
 
    local arity = 1
    while mapargs[1] ~= nil do
-      local d, v = mapfn(table_unpack(mapargs, 1, mapargs.n))
+      local d, v = mapfn(unpack(mapargs, 1, mapargs.n))
       if v ~= nil then
          arity, r = 2, {} break
       end
@@ -424,7 +416,7 @@ local function map(mapfn, ifn, ...)
       --   (ii) arity used to be 1, but we only consumed nil values, so the
       --          current mapargs with arity > 1 is the correct next value to use
       while mapargs[1] ~=   nil do
-         local k, v = mapfn(table_unpack(mapargs, 1, mapargs.n))
+         local k, v = mapfn(unpack(mapargs, 1, mapargs.n))
          r[k] = v
          mapargs = pack(nextfn(state, mapargs[1]))
       end
@@ -436,7 +428,7 @@ end
 local function map_with(mapfn, tt)
    local r = {}
    for k, v in next, tt do
-      r[k] = mapfn(table_unpack(v, 1, len(v)))
+      r[k] = mapfn(unpack(v, 1, len(v)))
    end
    return r
 end
@@ -446,7 +438,7 @@ local function _product(x, l)
    local r = {}
    for v1 in ielems(x) do
       for v2 in ielems(l) do
-         r[#r + 1] = {v1, table_unpack(v2, 1, len(v2))}
+         r[#r + 1] = {v1, unpack(v2, 1, len(v2))}
       end
    end
    return r

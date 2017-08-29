@@ -13,25 +13,15 @@
 ]]
 
 
-local error		= error
-local getmetatable	= getmetatable
-local next		= next
-local select		= select
-local setmetatable	= setmetatable
-local tonumber		= tonumber
+local _ENV = require 'std.normalize' {
+   'string',
+   'table'
+}
 
 local format	= string.format
 local concat	= table.concat
-local unpack	= table.unpack or unpack
 
-
-local _		= require 'functional._base'
-
-local toqstring	= _.toqstring
-
-local _ENV	= _.strict and _.strict {} or {}
-
-_ = nil
+local toqstring	= require 'functional._base'.toqstring
 
 
 
