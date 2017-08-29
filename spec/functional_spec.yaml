@@ -1,6 +1,4 @@
 before:
-   base = require 'functional._base'
-
    this_module = 'functional'
    global_table = '_G'
 
@@ -11,8 +9,32 @@ before:
       'shape', 'zip', 'zip_with',
    }
 
+   function getmetamethod(x, n)
+      local m = (getmetatable(x) or {})[n]
+      if type(m) == 'function' then
+         return m
+      end
+      return (getmetatable(m) or {}).__call
+   end
+
+   ipairs = (_VERSION == 'Lua 5.3') and ipairs or function(l)
+      return function(l, n)
+         n = n + 1
+         if l[n] ~= nil then
+            return n, l[n]
+         end
+      end, l, 0
+   end
+
+   if not pairs(setmetatable({},{__pairs=function() return false end})) then
+      local _pairs = pairs
+      pairs = function(t)
+         return (getmetamethod(t, '__pairs') or _pairs)(t)
+      end
+   end
+
    function elems(t)
-      local fn, istate, ctrl = base.pairs(t)
+      local fn, istate, ctrl = pairs(t)
       return function(state, _)
          local v
          ctrl, v = fn(state, ctrl)
@@ -21,7 +43,7 @@ before:
    end
 
    function ielems(t)
-      local fn, istate, ctrl = base.ipairs(t)
+      local fn, istate, ctrl = ipairs(t)
       return function(state, _)
          local v
          ctrl, v = fn(state, ctrl)
@@ -31,14 +53,14 @@ before:
 
    maxn = table.maxn or function(t)
       local n = 0
-      for k in base.pairs(t) do
+      for k in pairs(t) do
          if type(k) == 'number' and k > n then n = k end
       end
       return n
    end
 
    function npairs(t)
-      local m = base.getmetamethod(t, '__len')
+      local m = getmetamethod(t, '__len')
       local i, n = 0, m and m(t) or maxn(t)
       return function(t)
          i = i + 1

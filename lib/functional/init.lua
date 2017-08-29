@@ -23,7 +23,7 @@ local table_remove	= table.remove
 
 local _			= require 'functional._base'
 
-local argscheck		= _.typecheck and _.typecheck.argscheck
+local argscheck		= _.argscheck
 local serialize		= _.serialize
 
 _ = nil
@@ -518,7 +518,7 @@ end
 
 
 local function X(decl, fn)
-   return argscheck and argscheck('functional.' .. decl, fn) or fn
+   return argscheck('functional.' .. decl, fn)
 end
 
 return {
