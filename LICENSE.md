@@ -1,4 +1,4 @@
-Copyright (C) 2013-2016 functional authors
+Copyright (C) 2002-2017 functional authors
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation

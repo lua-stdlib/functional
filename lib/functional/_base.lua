@@ -1,3 +1,14 @@
+--[[
+ Functional programming for Lua 5.1, 5.2 & 5.3
+ Copyright (C) 2002-2017 functional authors
+]]
+--[[--
+ Purely to break internal dependency cycles without introducing
+ multiple copies of base functions used in other modules.
+
+ @module functional._base
+]]
+
 local _ENV = require 'std.normalize' {
    'string',
    'table',

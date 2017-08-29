@@ -11,7 +11,7 @@ by the [functional project][github]
 
 This is a collection of Functional Programming libraries for Lua 5.1
 (including LuaJIT), 5.2 and 5.3. The libraries are copyright by their
-authors 2002-2016 (see the [AUTHORS][] file for details), and released
+authors 2002-2017 (see the [AUTHORS][] file for details), and released
 under the [MIT license][mit] (the same license as Lua itself). There is
 no warranty.
 

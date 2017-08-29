@@ -1,3 +1,7 @@
+--[[
+ Functional programming for Lua 5.1, 5.2 & 5.3
+ Copyright (C) 2002-2017 functional authors
+]]
 --[[--
  Functional forms of Lua operators.
 
