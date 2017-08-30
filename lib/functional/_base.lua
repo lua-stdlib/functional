@@ -38,12 +38,12 @@ end
 --[[ ================= ]]--
 
 
-local function copy(dest, src)
-   if src == nil then
-      dest, src = {}, dest
+local function shallow_copy(t)
+   local r = {}
+   for k, v in next, t do
+      r[k] = v
    end
-   for k, v in next, src do dest[k] = v end
-   return dest
+   return r
 end
 
 
@@ -59,7 +59,7 @@ local function serialize(x, roots)
    roots = roots or {}
 
    local function stop_roots(x)
-      return roots[x] or serialize(x, copy(roots))
+      return roots[x] or serialize(x, shallow_copy(roots))
    end
 
    if type(x) ~= 'table' or getmetamethod(x, '__tostring') then
