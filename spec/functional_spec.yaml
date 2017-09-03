@@ -1,5 +1,5 @@
 before:
-   this_module = 'std.functional'
+   this_module = 'std.functional.init'
    global_table = '_G'
 
    exported_apis = {
