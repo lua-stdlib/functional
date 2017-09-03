@@ -1,5 +1,5 @@
 before:
-  Tuple   = require 'functional.tuple'
+  Tuple   = require 'std.functional.tuple'
 
   t0, t1, t2 = Tuple(), Tuple 'one', Tuple(false, true)
 
@@ -7,7 +7,7 @@ before:
 specify functional.tuple:
 - describe require:
   - it does not perturb the global namespace:
-      expect(show_apis {added_to='_G', by='functional.tuple'}).
+      expect(show_apis {added_to='_G', by='std.functional.tuple'}).
          to_equal {}
 
 
@@ -37,7 +37,7 @@ specify functional.tuple:
 
   - context with functional.operator.len:
     - before:
-        len = require 'functional.operator'.len
+        len = require 'std.functional.operator'.len
     - it returns the number of elements:
         expect(len(t0)).to_be(0)
         expect(len(t1)).to_be(1)

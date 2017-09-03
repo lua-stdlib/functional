@@ -25,9 +25,9 @@ license (the same license as Lua itself).  There is no warranty.
 dir = '../doc'
 
 file = {
-  '../lib/functional/init.lua',
-  '../lib/functional/operator.lua',
-  '../lib/functional/tuple.lua',
+  '../lib/std/functional/init.lua',
+  '../lib/std/functional/operator.lua',
+  '../lib/std/functional/tuple.lua',
 }
 
 new_type ('object', 'Objects', false, 'Fields')

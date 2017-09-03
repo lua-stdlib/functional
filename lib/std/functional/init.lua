@@ -8,16 +8,16 @@
  A selection of higher-order functions to enable a functional style of
  programming in Lua.
 
- @module functional
+ @module std.functional
 ]]
 
 
 local _ENV = require 'std.normalize' {
-   argscheck = require 'functional._base'.argscheck,
+   argscheck = require 'std.functional._base'.argscheck,
    ceil = math.ceil,
    concat = table.concat,
    remove = table.remove,
-   serialize = require 'functional._base'.serialize,
+   serialize = require 'std.functional._base'.serialize,
    wrap = coroutine.wrap,
    yield = coroutine.yield,
 }
@@ -522,7 +522,7 @@ end
 
 
 local function X(decl, fn)
-   return argscheck('functional.' .. decl, fn)
+   return argscheck('std.functional.' .. decl, fn)
 end
 
 return {
@@ -540,7 +540,7 @@ return {
    -- @tparam table argt table of *fn* arguments to bind
    -- @return function with *argt* arguments already bound
    -- @usage
-   --   cube = bind(functional.operator.pow, {[2] = 3})
+   --   cube = bind(std.functional.operator.pow, {[2] = 3})
    bind = X('bind(func, table)', bind),
 
    --- Identify callable types.
@@ -589,7 +589,7 @@ return {
    -- @treturn function composition of fnN .. fn1: note that this is the
    -- reverse of what you might expect, but means that code like:
    --
-   --     functional.compose(function(x) return f(x) end,
+   --     compose(function(x) return f(x) end,
    --                        function(x) return g(x) end))
    --
    -- can be read from top to bottom.
@@ -663,7 +663,7 @@ return {
    -- @see foldr
    -- @see reduce
    -- @usage
-   --   foldl(functional.operator.quot, {10000, 100, 10}) == (10000 / 100) / 10
+   --   foldl(operator.quot, {10000, 100, 10}) == (10000 / 100) / 10
    foldl = X('foldl(function, [any], table)', foldl),
 
    --- Fold a binary function right associatively.
@@ -677,7 +677,7 @@ return {
    -- @see foldl
    -- @see reduce
    -- @usage
-   --   foldr(functional.operator.quot, {10000, 100, 10}) == 10000 / (100 / 10)
+   --   foldr(operator.quot, {10000, 100, 10}) == 10000 / (100 / 10)
    foldr = X('foldr(function, [any], table)', foldr),
 
    --- Identity function.
@@ -696,10 +696,10 @@ return {
    --    order with respect to *t*
    -- @see ipairs
    -- @usage
-   --   local rielems = functional.compose(functional.ireverse, std.ielems)
+   --   local rielems = compose(ireverse, std.ielems)
    --   --> bar
    --   --> foo
-   --   functional.map(print, rielems, {'foo', 'bar', [4]='baz', d=5})
+   --   map(print, rielems, {'foo', 'bar', [4]='baz', d=5})
    ireverse = X('ireverse(table)', ireverse),
 
    --- Compile a lambda string into a Lua function.
@@ -798,7 +798,7 @@ return {
    -- @see foldr
    -- @usage
    --   --> 2 ^ 3 ^ 4 ==> 4096
-   --   reduce(functional.operator.pow, 2, std.ielems, {3, 4})
+   --   reduce(operator.pow, 2, std.ielems, {3, 4})
    reduce = X('reduce(func, any, [func], ?any...)', reduce),
 
    --- Shape a table according to a list of dimensions.
@@ -868,7 +868,7 @@ return {
 -- @treturn string stable serialized arguments
 -- @usage
 --   local mnemonic = function(name, value, props) return name end
---   local intern = functional.memoize(mksymbol, mnemonic)
+--   local intern = memoize(mksymbol, mnemonic)
 
 
 --- Signature of a @{filter} predicate callback function.

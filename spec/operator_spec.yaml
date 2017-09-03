@@ -1,5 +1,5 @@
 before: |
-  this_module  = 'functional.operator'
+  this_module  = 'std.functional.operator'
   global_table = '_G'
 
   M = require(this_module)

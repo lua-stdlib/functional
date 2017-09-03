@@ -1,6 +1,6 @@
 local _MODREV, _SPECREV = 'git', '-1'
 
-package = 'functional'
+package = 'std.functional'
 version = _MODREV .. _SPECREV
 
 description = {
@@ -28,10 +28,10 @@ dependencies = {
 build = {
    type = 'builtin',
    modules = {
-      ['functional'] = 'lib/functional/init.lua',
-      ['functional._base'] = 'lib/functional/_base.lua',
-      ['functional.operator'] = 'lib/functional/operator.lua',
-      ['functional.tuple'] = 'lib/functional/tuple.lua',
-      ['functional.version'] = 'lib/functional/version.lua',
+      ['std.functional'] = 'lib/std/functional/init.lua',
+      ['std.functional._base'] = 'lib/std/functional/_base.lua',
+      ['std.functional.operator'] = 'lib/std/functional/operator.lua',
+      ['std.functional.tuple'] = 'lib/std/functional/tuple.lua',
+      ['std.functional.version'] = 'lib/std/functional/version.lua',
    },
 }

@@ -6,7 +6,7 @@
  Purely to break internal dependency cycles without introducing
  multiple copies of base functions used in other modules.
 
- @module functional._base
+ @module std.functional._base
 ]]
 
 local _ENV = require 'std.normalize' {

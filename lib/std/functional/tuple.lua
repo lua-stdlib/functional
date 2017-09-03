@@ -13,14 +13,14 @@
  The immutability guarantees only work if you don't change the contents
  of tables after adding them to a tuple.   Don't do that!
 
- @module functional.tuple
+ @module std.functional.tuple
 ]]
 
 
 local _ENV = require 'std.normalize' {
    format = string.format,
    concat = table.concat,
-   toqstring = require 'functional._base'.toqstring,
+   toqstring = require 'std.functional._base'.toqstring,
 }
 
 
@@ -61,7 +61,7 @@ local _ENV = require 'std.normalize' {
 -- @string[opt='Tuple'] _type object name
 -- @int n number of tuple elements
 -- @usage
--- local Tuple = require 'functional.tuple'
+-- local Tuple = require 'std.functional.tuple'
 -- function count(...)
 --    argtuple = Tuple(...)
 --    return argtuple.n
@@ -99,7 +99,7 @@ local Tuple = {
    -- @usage
    -- -- Only works on Lua 5.2 or newer:
    -- #Tuple(nil, 2, nil) --> 3
-   -- -- For compatibility with Lua 5.1, use @{functional.operator.len}
+   -- -- For compatibility with Lua 5.1, use @{operator.len}
    -- len(Tuple(nil, 2, nil)
    __len = function(self)
       return self.n

@@ -2,4 +2,4 @@
 /build-aux/config.ld
 /doc/*
 /functional-*.src.rock
-/lib/functional/version.lua
+/lib/std/functional/version.lua

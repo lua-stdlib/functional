@@ -5,12 +5,12 @@
 --[[--
  Functional forms of Lua operators.
 
- @module functional.operator
+ @module std.functional.operator
 ]]
 
 
 local _ENV = require 'std.normalize' {
-   serialize = require 'functional._base'.serialize,
+   serialize = require 'std.functional._base'.serialize,
 }
 
 
@@ -43,7 +43,7 @@ return {
    -- @return concatenation of stringified arguments.
    -- @usage
    --   --> '=> 1000010010'
-   --   functional.foldl(concat, '=> ', {10000, 100, 10})
+   --   foldl(concat, '=> ', {10000, 100, 10})
    concat = function(a, b)
      return tostring(a) .. tostring(b)
    end,
@@ -62,7 +62,7 @@ return {
    -- @return value stored at *t[k]* if any, otherwise `nil`
    -- @usage
    --   --> 4
-   --   functional.foldl(get, {1, {{2, 3, 4}, 5}}, {2, 1, 3})
+   --   foldl(get, {1, {{2, 3, 4}, 5}}, {2, 1, 3})
    get = function(t, k)
       return t and t[k] or nil
    end,
@@ -75,7 +75,7 @@ return {
    -- @usage
    --   -- destructive table merge:
    --   --> {'one', bar='baz', two=5}
-   --   functional.reduce(set, {'foo', bar='baz'}, {'one', two=5})
+   --   reduce(set, {'foo', bar='baz'}, {'one', two=5})
    set = function(t, k, v)
       t[k]=v
       return t
@@ -87,7 +87,7 @@ return {
    -- @return the sum of the *a* and *b*
    -- @usage
    --   --> 10110
-   --   functional.foldl(sum, {10000, 100, 10})
+   --   foldl(sum, {10000, 100, 10})
    sum = function(a, b)
       return a + b
    end,
@@ -98,7 +98,7 @@ return {
    -- @return the difference between *a* and *b*
    -- @usage
    --   --> 890
-   --   functional.foldl(diff, {10000, 100, 10})
+   --   foldl(diff, {10000, 100, 10})
    diff = function(a, b)
       return a - b
    end,
@@ -109,7 +109,7 @@ return {
    -- @return the product of *a* and *b*
    -- @usage
    --   --> 10000000
-   --   functional.foldl(prod, {10000, 100, 10})
+   --   foldl(prod, {10000, 100, 10})
    prod = function(a, b)
       return a * b
    end,
@@ -120,7 +120,7 @@ return {
    -- @return the quotient *a* and *b*
    -- @usage
    --   --> 1000
-   --   functional.foldr(quot, {10000, 100, 10})
+   --   foldr(quot, {10000, 100, 10})
    quot = function(a, b)
       return a / b
    end,
@@ -131,7 +131,7 @@ return {
    -- @return the modulus of *a* and *b*
    -- @usage
    --   --> 3
-   --   functional.foldl(mod, {65536, 100, 11})
+   --   foldl(mod, {65536, 100, 11})
    mod = function(a, b)
       return a % b
    end,
@@ -142,7 +142,7 @@ return {
    -- @return the *a* to the power of *b*
    -- @usage
    --   --> 4096
-   --   functional.foldl(pow, {2, 3, 4})
+   --   foldl(pow, {2, 3, 4})
    pow = function(a, b)
       return a ^ b
    end,
@@ -153,7 +153,7 @@ return {
    -- @return logical *a* and *b*
    -- @usage
    --   --> true
-   --   functional.foldl(conj, {true, 1, 'false'})
+   --   foldl(conj, {true, 1, 'false'})
    conj = function(a, b)
       return a and b
    end,
@@ -164,7 +164,7 @@ return {
    -- @return logical *a* or *b*
    -- @usage
    --   --> true
-   --   functional.foldl(disj, {true, 1, false})
+   --   foldl(disj, {true, 1, false})
    disj = function(a, b)
       return a or b
    end,
@@ -174,7 +174,7 @@ return {
    -- @return not *a*
    -- @usage
    --   --> {true, false, false, false}
-   --   functional.bind(functional.map, {std.ielems, neg}) {false, true, 1, 0}
+   --   bind(map, {std.ielems, neg}) {false, true, 1, 0}
    neg = function(a)
       return not a
    end,

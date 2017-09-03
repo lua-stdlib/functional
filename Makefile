@@ -6,7 +6,7 @@ SPECL	= specl
 
 VERSION	= git
 
-luadir	= lib/functional
+luadir	= lib/std/functional
 SOURCES =				\
 	$(luadir)/_base.lua		\
 	$(luadir)/init.lua		\

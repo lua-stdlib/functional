@@ -26,11 +26,11 @@ return {
   -- (exclude overrules include, do not include
   -- the .lua extension, path separator is always '/')
   ["include"] = {
-    "lib/functional/_base$",
-    "lib/functional/init$",
-    "lib/functional/operator$",
-    "lib/functional/tuple$",
-    "lib/functional/version$",
+    "lib/std/functional/_base$",
+    "lib/std/functional/init$",
+    "lib/std/functional/operator$",
+    "lib/std/functional/tuple$",
+    "lib/std/functional/version$",
   },
 
   -- Patterns for files to exclude when reporting
