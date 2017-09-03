@@ -13,25 +13,14 @@
 
 
 local _ENV = require 'std.normalize' {
-   'coroutine',
-   'math',
-   'table',
+   argscheck = require 'functional._base'.argscheck,
+   ceil = math.ceil,
+   concat = table.concat,
+   remove = table.remove,
+   serialize = require 'functional._base'.serialize,
+   wrap = coroutine.wrap,
+   yield = coroutine.yield,
 }
-
-
-local coroutine_wrap	= coroutine.wrap
-local coroutine_yield	= coroutine.yield
-local math_ceil		= math.ceil
-local table_concat	= table.concat
-local table_remove	= table.remove
-
-
-local _			= require 'functional._base'
-
-local argscheck		= _.argscheck
-local serialize		= _.serialize
-
-_ = nil
 
 
 
@@ -57,10 +46,10 @@ local function leaves(it, tr)
             visit(v)
          end
       else
-         coroutine_yield(n)
+         yield(n)
       end
    end
-   return coroutine_wrap(visit), tr
+   return wrap(visit), tr
 end
 
 
@@ -94,7 +83,7 @@ local function bind(fn, bound)
       local n = bound.n or 0
       for k, v in next, bound do
          -- ...but only copy integer keys.
-         if type(k) == 'number' and math_ceil(k) == k then
+         if type(k) == 'number' and ceil(k) == k then
             argt[k] = v
             n = k > n and k or n   -- Inline `n = maxn(unbound)` in same pass.
          end
@@ -345,7 +334,7 @@ local function multiserialize(...)
    for i = 1, seq.n do
       buf[i] = serialize(seq[i])
    end
-   return table_concat(buf, ',')
+   return concat(buf, ',')
 end
 
 
@@ -466,7 +455,7 @@ local function product(...)
    else
       -- Accumulate a list of products, starting by popping the last
       -- argument and making each member a one element list.
-      local d = map(lambda '={_1}', ielems, table_remove(argt))
+      local d = map(lambda '={_1}', ielems, remove(argt))
       -- Right associatively fold in remaining argt members.
       return foldr(_product, d, argt)
    end
@@ -490,7 +479,7 @@ local function shape(dims, t)
       end
    end
    if zero then
-      dims[zero] = math_ceil(len(t) / size)
+      dims[zero] = ceil(len(t) / size)
    end
    local function fill(i, d)
       if d > len(dims) then

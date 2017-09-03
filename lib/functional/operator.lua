@@ -9,12 +9,9 @@
 ]]
 
 
-
-
-local _ENV = require 'std.normalize' {}
-
-local serialize = require 'functional._base'.serialize
-
+local _ENV = require 'std.normalize' {
+   serialize = require 'functional._base'.serialize,
+}
 
 
 --[[ =============== ]]--

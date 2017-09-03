@@ -10,13 +10,9 @@
 ]]
 
 local _ENV = require 'std.normalize' {
-   'string',
-   'table',
+   format = string.format,
+   concat = table.concat,
 }
-
-local format	= string.format
-local concat	= table.concat
-
 
 
 local argscheck
