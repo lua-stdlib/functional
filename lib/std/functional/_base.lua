@@ -1,6 +1,6 @@
 --[[
  Functional programming for Lua 5.1, 5.2 & 5.3
- Copyright (C) 2002-2017 functional authors
+ Copyright (C) 2002-2018 std.functional authors
 ]]
 --[[--
  Purely to break internal dependency cycles without introducing

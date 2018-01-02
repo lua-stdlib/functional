@@ -1,7 +1,7 @@
 Functional Programming with Lua
 ===============================
 
-by the [std.functional project][github]
+Copyright (C) 2002-2018 [std.functional authors][authors]
 
 [![License](http://img.shields.io/:license-mit-blue.svg)](http://mit-license.org)
 [![travis-ci status](https://secure.travis-ci.org/lua-stdlib/functional.png?branch=master)](http://travis-ci.org/lua-stdlib/functional/builds)
@@ -11,9 +11,8 @@ by the [std.functional project][github]
 
 This is a collection of Functional Programming libraries for Lua 5.1
 (including LuaJIT), 5.2 and 5.3. The libraries are copyright by their
-authors 2002-2017 (see the [AUTHORS][] file for details), and released
-under the [MIT license][mit] (the same license as Lua itself). There is
-no warranty.
+authors (see the [AUTHORS][] file for details), and released under the
+[MIT license][mit] (the same license as Lua itself). There is no warranty.
 
 _std.functional_ has no run-time prerequisites beyond a standard Lua system,
 though it will take advantage of [stdlib][], [strict][] and [typecheck][]

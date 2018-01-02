@@ -1,3 +1,6 @@
+# Functional API for Lua 5.1, 5.2 & 5.3
+# Copyright (C) 2002-2018 std.functional authors
+
 LDOC	= ldoc
 LUA	= lua
 MKDIR	= mkdir -p
@@ -20,12 +23,12 @@ all: $(luadir)/version.lua doc
 
 
 $(luadir)/version.lua: .FORCE
-	@echo 'return "Functional Programming Libraries / $(VERSION)"' > '$@T';	\
-	if cmp -s '$@' '$@T'; then						\
-	    rm -f '$@T';							\
-	else									\
-	    echo 'echo "Functional Programming Libraries / $(VERSION)" > $@';	\
-	    mv '$@T' '$@';							\
+	@echo 'return "Functional Programming Libraries / $(VERSION)"' > '$@T';		\
+	if cmp -s '$@' '$@T'; then							\
+	    rm -f '$@T';								\
+	else										\
+	    echo 'echo return "Functional Programming Libraries / $(VERSION)" > $@';	\
+	    mv '$@T' '$@';								\
 	fi
 
 doc: build-aux/config.ld $(SOURCES)
