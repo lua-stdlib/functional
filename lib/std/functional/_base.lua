@@ -12,6 +12,8 @@
 local _ENV = require 'std.normalize' {
    format = string.format,
    concat = table.concat,
+   keys = 'table.keys',
+   sort = table.sort,
 }
 
 
@@ -51,6 +53,22 @@ local function toqstring(x)
 end
 
 
+local function keycmp(a, b)
+   if type(a) == 'number' then
+      return type(b) ~= 'number' or a < b
+   else
+      return type(b) ~= 'number' and tostring(a) < tostring(b)
+   end
+end
+
+
+local function sortedkeys(t, cmp)
+   local r = keys(t)
+   sort(r, cmp)
+   return r
+end
+
+
 local function serialize(x, roots)
    roots = roots or {}
 
@@ -65,13 +83,13 @@ local function serialize(x, roots)
       local buf = {'{'} -- pre-buffer table open
       roots[x] = toqstring(x) -- recursion protection
 
-      local kp, vp -- previous key and value
-      for k, v in opairs(x) do
+      local kp -- previous key
+      for _, k in ipairs(sortedkeys(x, keycmp)) do
          if kp ~= nil then
             buf[#buf + 1] = ','
          end
-         buf[#buf + 1] = stop_roots(k) .. '=' .. stop_roots(v)
-         kp, vp = k, v
+         buf[#buf + 1] = stop_roots(kp) .. '=' .. stop_roots(x[k])
+         kp = k
       end
       buf[#buf + 1] = '}' -- buffer << table close
 
