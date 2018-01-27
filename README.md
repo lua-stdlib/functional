@@ -3,7 +3,7 @@ Functional Programming with Lua
 
 Copyright (C) 2002-2018 [std.functional authors][authors]
 
-[![License](http://img.shields.io/:license-mit-blue.svg)](http://mit-license.org)
+[![License](http://img.shields.io/:license-mit-blue.svg)](https://mit-license.org/2002)
 [![travis-ci status](https://secure.travis-ci.org/lua-stdlib/functional.png?branch=master)](http://travis-ci.org/lua-stdlib/functional/builds)
 [![codecov.io](https://codecov.io/gh/lua-stdlib/functional/branch/master/graph/badge.svg)](https://codecov.io/gh/lua-stdlib/functional)
 [![Stories in Ready](https://badge.waffle.io/lua-stdlib/functional.png?label=ready&title=Ready)](https://waffle.io/lua-stdlib/functional)
@@ -20,8 +20,8 @@ if they are installed.
 
 [authors]: https://github.com/lua-stdlib/functional/blob/master/AUTHORS.md
 [github]: https://github.com/lua-stdlib/functional/ "Github repository"
-[lua]: http://www.lua.org "The Lua Project"
-[mit]: http://mit-license.org "MIT License"
+[lua]: https://www.lua.org "The Lua Project"
+[mit]: https://mit-license.org "MIT License"
 [stdlib]: https://github.com/lua-stdlib/lua-stdlib "Standard Lua Libraries"
 [strict]: https://github.com/lua-stdlib/strict "strict variables"
 [typecheck]: https://github.com/gvvaughan/typecheck "function type checks"
@@ -41,13 +41,13 @@ To install current git master (for testing, before submitting a bug
 report for example):
 
 ```bash
-    luarocks install http://raw.githubusercontent.com/lua-stdlib/functional/master/functional-git-1.rockspec
+    luarocks install http://github.com/lua-stdlib/functional/raw/master/std.functional-git-1.rockspec
 ```
 
 The best way to install without [LuaRocks][] is to copy the `std/functional`
 folder and its contents into a directory on your package search path.
 
-[luarocks]: http://www.luarocks.org "Lua package manager"
+[luarocks]: https://www.luarocks.org "Lua package manager"
 
 
 Documentation
@@ -56,7 +56,7 @@ Documentation
 The latest release of these libraries is [documented in LDoc][github.io].
 Pre-built HTML files are included in the release.
 
-[github.io]: http://lua-stdlib.github.io/functional
+[github.io]: https://lua-stdlib.github.io/functional
 
 
 Bug reports and code contributions
@@ -90,4 +90,4 @@ points when proposing changes:
 4. Use vertical space to separate out compound statements to help the
    coverage reports discover untested lines.
 
-[issues]: http://github.com/lua-stdlib/functional/issues
+[issues]: https://github.com/lua-stdlib/functional/issues
