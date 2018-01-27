@@ -22,14 +22,8 @@ SOURCES =				\
 all: $(luadir)/version.lua doc
 
 
-$(luadir)/version.lua: .FORCE
-	@echo 'return "Functional Programming Libraries / $(VERSION)"' > '$@T';		\
-	if cmp -s '$@' '$@T'; then							\
-	    rm -f '$@T';								\
-	else										\
-	    echo 'echo return "Functional Programming Libraries / $(VERSION)" > $@';	\
-	    mv '$@T' '$@';								\
-	fi
+$(luadir)/version.lua: Makefile
+	    echo 'return "Functional Programming Libraries / $(VERSION)"' > '$@'
 
 doc: build-aux/config.ld $(SOURCES)
 	$(LDOC) -c build-aux/config.ld .
@@ -42,6 +36,3 @@ CHECK_ENV = LUA=$(LUA)
 
 check:
 	LUA=$(LUA) $(SPECL) $(SPECL_OPTS) spec/*_spec.yaml
-
-
-.FORCE:

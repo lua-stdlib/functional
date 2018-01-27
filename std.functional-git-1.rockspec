@@ -13,27 +13,15 @@ description = {
    license = 'MIT/X11',
 }
 
-source = (function(gitp)
-   if gitp then
-      return {
-         url = 'git://github.com/lua-stdlib/functional.git',
-      }
-   else
-      return {
-         url = 'http://github.com/lua-stdlib/functional/archive/v' .. _MODREV .. '.zip',
-         dir = 'functional-' .. _MODREV,
-      }
-   end
-end)(_MODREV == 'git')
-
 dependencies = {
    'lua >= 5.1, < 5.4',
    'std.normalize >= 1.0.3',
 }
 
-if _MODREV == 'git' then
-   dependencies[#dependencies + 1] = 'ldoc'
-end
+source = {
+   url = 'http://github.com/lua-stdlib/functional/archive/v' .. _MODREV .. '.zip',
+   dir = 'functional-' .. _MODREV,
+}
 
 build = {
    type = 'builtin',
@@ -45,3 +33,13 @@ build = {
       ['std.functional.version'] = 'lib/std/functional/version.lua',
    },
 }
+
+if _MODREV == 'git' then
+   dependencies[#dependencies + 1] = 'ldoc'
+
+   source = {
+      url = 'git://github.com/lua-stdlib/functional.git',
+   }
+
+   build.modules['std.functional.version'] = 'lib/std/functional/version-git.lua'
+end
