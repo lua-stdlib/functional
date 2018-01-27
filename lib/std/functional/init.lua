@@ -13,13 +13,13 @@
 
 
 local _ENV = require 'std.normalize' {
-   argscheck = require 'std.functional._base'.argscheck,
-   ceil = math.ceil,
-   concat = table.concat,
-   remove = table.remove,
-   serialize = require 'std.functional._base'.serialize,
-   wrap = coroutine.wrap,
-   yield = coroutine.yield,
+   'coroutine.wrap',
+   'coroutine.yield',
+   'math.ceil',
+   'std.functional._base.argscheck',
+   'std.functional._base.serialize',
+   'table.concat',
+   'table.remove',
 }
 
 

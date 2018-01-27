@@ -10,10 +10,10 @@
 ]]
 
 local _ENV = require 'std.normalize' {
-   format = string.format,
-   concat = table.concat,
-   keys = 'table.keys',
-   sort = table.sort,
+   'string.format',
+   'table.concat',
+   'table.keys',
+   'table.sort',
 }
 
 

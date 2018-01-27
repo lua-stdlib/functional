@@ -18,9 +18,9 @@
 
 
 local _ENV = require 'std.normalize' {
-   format = string.format,
-   concat = table.concat,
-   toqstring = require 'std.functional._base'.toqstring,
+   'std.functional._base.toqstring',
+   'string.format',
+   'table.concat',
 }
 
 

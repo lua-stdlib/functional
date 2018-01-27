@@ -10,7 +10,7 @@
 
 
 local _ENV = require 'std.normalize' {
-   serialize = require 'std.functional._base'.serialize,
+   'std.functional._base.serialize',
 }
 
 
