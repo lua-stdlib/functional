@@ -75,6 +75,8 @@ local function any(...)
 end
 
 
+local ceil = ceil -- FIXME: specl-14.x breaks function environments here :(
+
 local function bind(fn, bound)
    return function(...)
       local argt, unbound = {}, pack(...)
