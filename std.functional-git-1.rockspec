@@ -32,14 +32,15 @@ build = {
       ['std.functional.tuple'] = 'lib/std/functional/tuple.lua',
       ['std.functional.version'] = 'lib/std/functional/version.lua',
    },
+   copy_directories = {'doc'},
 }
 
 if _MODREV == 'git' then
+   build.copy_directories = nil
+
    dependencies[#dependencies + 1] = 'ldoc'
 
    source = {
       url = 'git://github.com/lua-stdlib/functional.git',
    }
-
-   build.modules['std.functional.version'] = 'lib/std/functional/version-git.lua'
 end
