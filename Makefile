@@ -1,4 +1,4 @@
-# Functional API for Lua 5.1, 5.2 & 5.3
+# Functional API for Lua 5.1, 5.2, 5.3 & 5.4
 # Copyright (C) 2002-2020 std.functional authors
 
 LDOC	= ldoc
@@ -19,7 +19,7 @@ SOURCES =				\
 	$(NOTHING_ELSE)
 
 
-all: $(luadir)/version.lua doc
+all: $(luadir)/version.lua
 
 
 $(luadir)/version.lua: Makefile

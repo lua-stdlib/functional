@@ -14,8 +14,8 @@ description = {
 }
 
 dependencies = {
-   'lua >= 5.1, < 5.4',
-   'std.normalize >= 1.0.3',
+   'lua >= 5.1, < 5.5',
+   'std.normalize >= 2.0.3',
 }
 
 source = {

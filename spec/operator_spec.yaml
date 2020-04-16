@@ -1,4 +1,4 @@
-# Functional programming for Lua 5.1, 5.2 & 5.3
+# Functional programming for Lua 5.1, 5.2, 5.3 & 5.4
 # Copyright (C) 2014-2020 std.functional authors
 
 before: |

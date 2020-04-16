@@ -10,7 +10,7 @@ Copyright (C) 2002-2020 [std.functional authors][authors]
 
 
 This is a collection of Functional Programming libraries for Lua 5.1
-(including LuaJIT), 5.2 and 5.3. The libraries are copyright by their
+(including LuaJIT), 5.2, 5.3 and 5.4. The libraries are copyright by their
 authors (see the [AUTHORS][] file for details), and released under the
 [MIT license][mit] (the same license as Lua itself). There is no warranty.
 
