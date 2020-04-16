@@ -38,8 +38,6 @@ build = {
 if _MODREV == 'git' then
    build.copy_directories = nil
 
-   dependencies[#dependencies + 1] = 'ldoc'
-
    source = {
       url = 'git://github.com/lua-stdlib/functional.git',
    }
