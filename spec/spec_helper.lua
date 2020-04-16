@@ -1,6 +1,6 @@
 --[[
  Functional programming for Lua 5.1, 5.2 & 5.3
- Copyright (C) 2014-2018 std.functional authors
+ Copyright (C) 2014-2020 std.functional authors
 ]]
 local typecheck
 have_typecheck, typecheck	= pcall(require, 'typecheck')

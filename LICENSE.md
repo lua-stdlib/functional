@@ -1,4 +1,4 @@
-Copyright (C) 2002-2018 std.functional authors
+Copyright (C) 2002-2020 std.functional authors
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation

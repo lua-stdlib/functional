@@ -1,7 +1,7 @@
 Functional Programming with Lua
 ===============================
 
-Copyright (C) 2002-2018 [std.functional authors][authors]
+Copyright (C) 2002-2020 [std.functional authors][authors]
 
 [![License](http://img.shields.io/:license-mit-blue.svg)](https://mit-license.org/2002)
 [![travis-ci status](https://secure.travis-ci.org/lua-stdlib/functional.png?branch=master)](http://travis-ci.org/lua-stdlib/functional/builds)
