@@ -1,8 +1,5 @@
 # std.functional NEWS - User visible changes
 
-## Noteworthy changes in release ?.? (????-??-?) [?]
-
-
 ## Noteworthy changes in release 1.0 (2022-01-04) [stable]
 
 ### New features (since lua-stdlib-41.2)
