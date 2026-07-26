@@ -1,5 +1,5 @@
-# Functional API for Lua 5.1, 5.2, 5.3 & 5.4
-# Copyright (C) 2002-2022 std.functional authors
+# Functional API for Lua 5.1, 5.2, 5.3, 5.4 & 5.5
+# Copyright (C) 2002-2026 std.functional authors
 
 LDOC	= ldoc
 LUA	= lua

@@ -3,6 +3,11 @@
 ## Noteworthy changes in release ?.? (????-??-?) [?]
 
 
+## Noteworthy changes in release 1.0 (2026-07-26) [stable]
+
+  - Initial support for Lua 5.5.
+
+
 ## Noteworthy changes in release 1.0 (2022-01-04) [stable]
 
 ### New features (since lua-stdlib-41.2)

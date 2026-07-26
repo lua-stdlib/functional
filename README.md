@@ -1,7 +1,7 @@
 Functional Programming with Lua
 ===============================
 
-Copyright (C) 2002-2022 [std.functional authors][authors]
+Copyright (C) 2002-2026 [std.functional authors][authors]
 
 [![License](http://img.shields.io/:license-mit-blue.svg)](https://mit-license.org/2002)
 [![workflow status](https://github.com/lua-stdlib/functional/actions/workflows/spec.yml/badge.svg?branch=master)](https://github.com/lua-stdlib/functional/actions)
@@ -9,7 +9,7 @@ Copyright (C) 2002-2022 [std.functional authors][authors]
 
 
 This is a collection of Functional Programming libraries for Lua 5.1
-(including LuaJIT), 5.2, 5.3 and 5.4. The libraries are copyright by their
+(including LuaJIT), 5.2, 5.3, 5.4 and 5.5. The libraries are copyright by their
 authors (see the [AUTHORS][] file for details), and released under the
 [MIT license][mit] (the same license as Lua itself). There is no warranty.
 

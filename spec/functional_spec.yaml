@@ -1,5 +1,5 @@
-# Functional programming for Lua 5.1, 5.2, 5.3 & 5.4
-# Copyright (C) 2014-2022 std.functional authors
+# Functional programming for Lua 5.1, 5.2, 5.3, 5.4 & 5.5
+# Copyright (C) 2014-2026 std.functional authors
 
 before:
    this_module = 'std.functional.init'
@@ -114,7 +114,7 @@ specify functional:
   - it propagates nil arguments correctly:
       truthy = function(x) return x and true or false end
       expect(f(truthy)(true, false, nil, nil, 0, nil)).
-         to_equal(true, false, false, false, true, false)
+         to_equal({true, false, false, false, true, false})
   - it calls all functions until one returns non-nil:
       expect(f(M.id, M.id, stop, fail)(nil)).to_be(true)
   - it only looks at first returned value:
