@@ -1,4 +1,4 @@
-local _MODREV, _SPECREV = 'git', '-1'
+local _MODREV, _SPECREV = 'dev', '-1'
 
 package = 'std.functional'
 version = _MODREV .. _SPECREV
@@ -9,7 +9,7 @@ description = {
       An immutable tuple object, and many higher-order functions to help
       program in a functional style using tuples and Lua tables.
    ]],
-   homepage = 'http://lua-stdlib.github.io/functional',
+   homepage = 'https://lua-stdlib.github.io/functional',
    license = 'MIT/X11',
 }
 
@@ -19,7 +19,7 @@ dependencies = {
 }
 
 source = {
-   url = 'http://github.com/lua-stdlib/functional/archive/v' .. _MODREV .. '.zip',
+   url = 'https://github.com/lua-stdlib/functional/archive/v' .. _MODREV .. '.zip',
    dir = 'functional-' .. _MODREV,
 }
 
@@ -35,10 +35,10 @@ build = {
    copy_directories = {'doc'},
 }
 
-if _MODREV == 'git' then
+if _MODREV == 'dev' then
    build.copy_directories = nil
 
    source = {
-      url = 'git://github.com/lua-stdlib/functional.git',
+      url = 'git+https://github.com/lua-stdlib/functional.git',
    }
 end
