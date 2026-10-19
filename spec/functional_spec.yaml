@@ -104,7 +104,7 @@ specify functional:
       f = M.any
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.any(func*)')
+      badargs.diagnose('std.functional.any(func...)', f)
 
   - it returns a single function:
       expect(type(f(M.id))).to_be 'function'
@@ -112,9 +112,8 @@ specify functional:
       expect(f(M.id)(true)).to_be(true)
       expect({f(M.id)(1, 2, 3)}).to_equal {1, 2, 3}
   - it propagates nil arguments correctly:
-      truthy = function(x) return x and true or false end
-      expect(f(truthy)(true, false, nil, nil, 0, nil)).
-         to_equal({true, false, false, false, true, false})
+      expect(pack(f(M.id)(nil, false, nil, 3))).
+         to_equal {n=4, [2]=false, [4]=3}
   - it calls all functions until one returns non-nil:
       expect(f(M.id, M.id, stop, fail)(nil)).to_be(true)
   - it only looks at first returned value:
@@ -130,7 +129,7 @@ specify functional:
       f = M.bind
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.bind(function, table)')
+      badargs.diagnose('std.functional.bind(func, table)', f)
 
   - it does not affect normal operation if no arguments are bound:
       expect(f(math.min, {})(2, 3, 4)).to_be(2)
@@ -161,10 +160,9 @@ specify functional:
       f = M.callable
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.callable(?any)')
+      badargs.diagnose('std.functional.callable([?any])', f)
 
   - it returns the function associated with a callable:
-      Container = require 'std.container' { __call=M.nop }
       for _, v in ipairs {
          true,
          42,
@@ -173,7 +171,6 @@ specify functional:
          {},
          M.nop,
          setmetatable({}, {__call = M.nop}),
-         Container,
       } do
          expect(f(v)).to_be(pcall(v, {}) and M.nop or nil)
       end
@@ -193,7 +190,7 @@ specify functional:
       f = M.case
 
   - context with bad arguments: |
-      badargs.diagnose(f, 'std.functional.case(?any, #table)')
+      badargs.diagnose('std.functional.case(?any, #table)', f)
 
   - it matches against branch keys:
       expect(f('yes', branches)).to_be(true)
@@ -228,7 +225,7 @@ specify functional:
       f = M.collect
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.collect([func], ?any*)')
+      badargs.diagnose('std.functional.collect([func], ?any...)', f)
 
   - it collects a list of single return value iterator results:
       expect(f(ielems, {'a', 'b', 'c'})).to_equal {'a', 'b', 'c'}
@@ -250,7 +247,7 @@ specify functional:
       f = M.compose
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.compose(func*)')
+      badargs.diagnose('std.functional.compose(func...)', f)
 
   - it composes a single function correctly:
       expect(f(M.id)(1)).to_be(1)
@@ -299,7 +296,7 @@ specify functional:
       f = M.curry
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.curry(func, int)')
+      badargs.diagnose('std.functional.curry(func, int)', f)
 
   - it returns a zero argument function uncurried:
       expect(f(f, 0)).to_be(f)
@@ -323,7 +320,7 @@ specify functional:
       f = M.filter
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.filter(func, [func], any*)')
+      badargs.diagnose('std.functional.filter(func, [func], ?any...)', f)
 
   - it works with an empty table:
       expect(f(M.id, pairs, {})).to_equal {}
@@ -361,7 +358,7 @@ specify functional:
       f = M.flatten
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.flatten(table)')
+      badargs.diagnose('std.functional.flatten(table)', f)
 
   - it returns a table:
       expect(type(f(t))).to_be 'table'
@@ -377,7 +374,7 @@ specify functional:
       f = M.foldl
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.foldl(func, [any], table)')
+      badargs.diagnose('std.functional.foldl(function, [any], table)', f)
 
   - it works with an empty table:
       expect(f(op.sum, 10000, {})).to_be(10000)
@@ -395,7 +392,7 @@ specify functional:
       f = M.foldr
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.foldr(func, [any], table)')
+      badargs.diagnose('std.functional.foldr(function, [any], table)', f)
 
   - it works with an empty table:
       expect(f(op.sum, 1, {})).to_be(1)
@@ -436,7 +433,7 @@ specify functional:
       f = M.ireverse
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.ireverse(table)')
+      badargs.diagnose('std.functional.ireverse(table)', f)
 
   - it returns a new list:
       t = {1, 2, 5}
@@ -461,7 +458,7 @@ specify functional:
       end
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.lambda(string)')
+      badargs.diagnose('std.functional.lambda(string)', f)
 
       examples {['it diagnoses bad lambda string'] = function()
          expect(select(2, f 'foo')).to_be "invalid lambda string 'foo'"
@@ -512,7 +509,7 @@ specify functional:
       f = M.map
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.map(func, [func], ?any*)')
+      badargs.diagnose('std.functional.map(func, [func], ?any...)', f)
 
   - it works with an empty table:
       expect(f(M.id, ipairs, {})).to_equal {}
@@ -566,7 +563,7 @@ specify functional:
       f = M.map_with
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.map_with(func, table of tables)')
+      badargs.diagnose('std.functional.map_with(function, table of tables)', f)
 
   - it works for an empty table:
       expect(f(fn, {})).to_equal({})
@@ -598,7 +595,7 @@ specify functional:
       end)
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.memoize(func, ?func)')
+      badargs.diagnose('std.functional.memoize(func, [?func])', f)
 
   - it propagates multiple return values:
       expect((memfn())).to_be(nil)
@@ -667,7 +664,7 @@ specify functional:
       f = M.product
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.product(list*)')
+      badargs.diagnose('std.functional.product(list...)', f)
 
   - it works with an empty table:
       expect(f {}).to_equal {}
@@ -694,7 +691,7 @@ specify functional:
       f = M.reduce
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.reduce(func, any, [func], ?any*)')
+      badargs.diagnose('std.functional.reduce(func, any, [func], ?any...)', f)
 
   - it works with an empty table:
       expect(f(op.sum, 2, ipairs, {})).to_be(2)
@@ -727,7 +724,7 @@ specify functional:
       f = M.shape
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.shape(table, table)')
+      badargs.diagnose('std.functional.shape(table, table)', f)
 
   - it returns a table:
       expect(objtype(f({2, 3}, l))).to_be 'table'
@@ -757,7 +754,7 @@ specify functional:
       f = M.zip
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.zip(table)')
+      badargs.diagnose('std.functional.zip(table of tables)', f)
 
   - it works for an empty table:
       expect(f {}).to_equal {}
@@ -777,7 +774,7 @@ specify functional:
       f = M.zip_with
 
   - context with bad arguments:
-      badargs.diagnose(f, 'std.functional.zip_with(function, table of tables)')
+      badargs.diagnose('std.functional.zip_with(function, table of tables)', f)
 
   - it works for an empty table:
       expect(f(fn, {})).to_equal {}

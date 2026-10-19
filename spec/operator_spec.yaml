@@ -7,6 +7,23 @@ before: |
 
   M = require(this_module)
 
+  -- A list whose metatable compares element by element, then by length.
+  local function compare(a, b)
+     for i = 1, math.min(#a, #b) do
+        if a[i] ~= b[i] then
+           return a[i] < b[i] and -1 or 1
+        end
+     end
+     return #a - #b
+  end
+  local list_mt = {
+     __lt = function(a, b) return compare(a, b) < 0 end,
+     __le = function(a, b) return compare(a, b) <= 0 end,
+  }
+  function List(t)
+     return setmetatable(t, list_mt)
+  end
+
 specify functional.operator:
 - context when required:
   - context by name:
@@ -248,7 +265,6 @@ specify functional.operator:
       expect(f('b', 'b')).to_be(false)
       expect(f('c', 'b')).to_be(false)
   - it supports __lt metamethods:
-      List = require 'std.list' {}
       expect(f(List {1, 2, 3}, List {1, 2, 3, 4})).to_be(true)
       expect(f(List {1, 2, 3}, List {1, 2, 3})).to_be(false)
       expect(f(List {1, 2, 4}, List {1, 2, 3})).to_be(false)
@@ -266,7 +282,6 @@ specify functional.operator:
       expect(f(3, 2)).to_be(false)
       expect(f('c', 'b')).to_be(false)
   - it supports __lte metamethods:
-      List = require 'std.list' {}
       expect(f(List {1, 2, 3}, List {1, 2, 3, 4})).to_be(true)
       expect(f(List {1, 2, 3}, List {1, 2, 3})).to_be(true)
       expect(f(List {1, 2, 4}, List {1, 2, 3})).to_be(false)
@@ -284,7 +299,6 @@ specify functional.operator:
       expect(f('b', 'b')).to_be(false)
       expect(f('b', 'c')).to_be(false)
   - it supports __lt metamethods:
-      List = require 'std.list' {}
       expect(f(List {1, 2, 3, 4}, List {1, 2, 3})).to_be(true)
       expect(f(List {1, 2, 3}, List {1, 2, 3})).to_be(false)
       expect(f(List {1, 2, 3}, List {1, 2, 4})).to_be(false)
@@ -302,7 +316,6 @@ specify functional.operator:
       expect(f(2, 3)).to_be(false)
       expect(f('b', 'c')).to_be(false)
   - it supports __lte metamethods:
-      List = require 'std.list' {}
       expect(f(List {1, 2, 3, 4}, List {1, 2, 3})).to_be(true)
       expect(f(List {1, 2, 3}, List {1, 2, 3})).to_be(true)
       expect(f(List {1, 2, 3}, List {1, 2, 4})).to_be(false)

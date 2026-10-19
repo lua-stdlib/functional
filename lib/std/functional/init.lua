@@ -551,7 +551,7 @@ return {
    -- @return `true` if *x* can be called, otherwise `false`
    -- @usage
    --   if callable(functable) then functable(args) end
-   callable = X('callable(?any)', callable),
+   callable = X('callable([?any])', callable),
 
    --- A rudimentary case statement.
    -- Match *with* against keys in *branches* table.
@@ -767,7 +767,7 @@ return {
    -- @treturn functable memoized function
    -- @usage
    --   local fast = memoize(function(...) --[[ slow code ]] end)
-   memoize = X('memoize(func, ?func)', memoize),
+   memoize = X('memoize(func, [?func])', memoize),
 
    --- No operation.
    -- This function ignores all arguments, and returns no values.
