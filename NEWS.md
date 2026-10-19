@@ -2,6 +2,15 @@
 
 ## Noteworthy changes in release ?.? (????-??-?) [?]
 
+### New features
+
+  - std.functional builds with luke instead of make.  To install
+    current git master, use the `std.functional-dev-1.rockspec`:
+
+    ```bash
+    luarocks install https://raw.githubusercontent.com/lua-stdlib/functional/master/std.functional-dev-1.rockspec
+    ```
+
 ### Bug fixes
 
   - `map` passes every result of every iteration to its function, even

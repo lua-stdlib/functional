@@ -3,8 +3,8 @@
  Copyright (C) 2002-2026 std.functional authors
 ]]
 
-title = 'functional @PACKAGE_VERSION@ Reference'
-project = 'functional @PACKAGE_VERSION@'
+title = 'functional @version@ Reference'
+project = 'functional @version@'
 
 description = [[
 # Functional Programming with Lua
@@ -12,8 +12,8 @@ description = [[
 An immutable tuple object, and many higher-order functions to help
 program in a functional style using tuples and Lua tables.
 
-This is a light-weight library for Lua 5.1 (including LuaJIT), 5.2
-and 5.3 written in pure Lua.
+This is a light-weight library for Lua 5.1 (including LuaJIT), 5.2,
+5.3, 5.4 and 5.5 written in pure Lua.
 
 ## LICENSE
 

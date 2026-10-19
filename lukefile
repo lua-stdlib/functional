@@ -1,0 +1,19 @@
+--[[
+ Functional programming for Lua 5.1, 5.2, 5.3, 5.4 & 5.5
+ Copyright (C) 2002-2026 std.functional authors
+]]
+
+luke_format = 0
+
+package  = 'std.functional'
+version  = '$USER'
+
+ldocs    = 'build-aux/config.ld.in'
+
+modules  = {
+   {['std.functional']          = 'lib/std/functional/init.lua'},
+   {['std.functional._base']    = 'lib/std/functional/_base.lua'},
+   {['std.functional.operator'] = 'lib/std/functional/operator.lua'},
+   {['std.functional.tuple']    = 'lib/std/functional/tuple.lua'},
+   {['std.functional.version']  = 'lib/std/functional/version.lua.in'},
+}
