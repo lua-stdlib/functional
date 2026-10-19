@@ -524,6 +524,16 @@ specify functional:
       expect(f(M.id, npairs, t)).to_equal(t)
       expect(f(M.id, iter, nil, nil, 3, 4, nil, nil)).
          to_equal {false, false, 3, 4, false, false}
+  - it passes every result of every iteration to map function:
+      triples = function()
+         return function(_, i)
+            if i < 3 then
+               return i + 1, nil, 'x'
+            end
+         end, nil, 0
+      end
+      count = function(...) return select('#', ...) end
+      expect(f(count, triples, 'arg')).to_equal {3, 3, 3}
   - it passes all iteration result values to map function:
       t = {}
       f(function(k, v) t[k] = v end, pairs, elements)

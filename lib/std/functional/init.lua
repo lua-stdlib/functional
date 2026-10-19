@@ -413,7 +413,7 @@ local function map(mapfn, ifn, ...)
          arity, r = 2, {} break
       end
       r[#r + 1] = d
-      mapargs = {nextfn(state, mapargs[1])}
+      mapargs = pack(nextfn(state, mapargs[1]))
    end
 
    if arity > 1 then

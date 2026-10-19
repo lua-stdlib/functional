@@ -2,6 +2,11 @@
 
 ## Noteworthy changes in release ?.? (????-??-?) [?]
 
+### Bug fixes
+
+  - `map` passes every result of every iteration to its function, even
+    when an iterator returns `nil` before its last result.
+
 
 ## Noteworthy changes in release 1.0 (2026-07-26) [stable]
 
