@@ -10,7 +10,7 @@ before:
       'contains', 'converge', 'curry', 'default', 'detect', 'each', 'either', 'except',
       'filter', 'firstof', 'flatmap', 'flatten', 'foldl', 'foldr',
       'id', 'indexof', 'invert', 'isempty', 'iter', 'lambda',
-      'map', 'map_with', 'mapkeys', 'mapvalues', 'memoize', 'nop',
+      'map', 'map_with', 'mapkeys', 'mapvalues', 'memoize', 'merged', 'nop',
       'partition', 'pluck', 'predicate', 'product', 'reject', 'reversed', 'shape',
       'some',
       'sorted', 'tabulate', 'values', 'zip', 'zip_with',
@@ -1211,6 +1211,43 @@ specify functional:
       pass, fail = f(M.iter(ipairs {'a', 'b', 'c'}), function(i, e) return e == 'b' end)
       expect(pass).to_equal {n=1, 2}
       expect(fail).to_equal {n=2, 1, 3}
+
+
+- describe merged:
+  - before:
+      f = M.merged
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.merged(<?table...>)', f)
+
+  - it returns an empty table for no arguments:
+      expect(f()).to_equal {}
+  - it returns a new table:
+      t = {a = 1}
+      expect(f(t)).to_equal {a = 1}
+      expect(f(t)).not_to_be(t)
+  - it merges the entries of each table:
+      expect(f({a = 1, b = 2}, {c = 3}, {d = 4})).to_equal {a = 1, b = 2, c = 3, d = 4}
+  - it lets a later table replace an earlier one:
+      expect(f({a = 1, b = 2}, {b = 3}, {b = 4, c = 5})).to_equal {a = 1, b = 4, c = 5}
+  - it lets a later false replace an earlier value:
+      expect(f({a = 1}, {a = false})).to_equal {a = false}
+  - it keeps an earlier false:
+      expect(f({a = false}, {b = 1})).to_equal {a = false, b = 1}
+  - it skips nil arguments:
+      expect(f(nil, {a = 1}, nil, {b = 2}, nil)).to_equal {a = 1, b = 2}
+  - it merges the list part of tables:
+      expect(f({'a', 'b'}, {'c'})).to_equal {'c', 'b'}
+  - it leaves its arguments as they were:
+      a, b = {x = 1}, {x = 2}
+      f(a, b)
+      expect(a).to_equal {x = 1}
+      expect(b).to_equal {x = 2}
+  - it does not copy the tables that it holds:
+      inner = {}
+      expect(f({k = inner}).k).to_be(inner)
+  - it does not copy a metatable:
+      expect(getmetatable(f(setmetatable({}, {__index = {}})))).to_be(nil)
 
 
 - describe pluck:

@@ -584,6 +584,17 @@ local function mapvalues(t, fn)
 end
 
 
+local function merged(...)
+   local r, argu = {}, pack(...)
+   for i = 1, argu.n do
+      for k, v in next, argu[i] or {} do
+         r[k] = v
+      end
+   end
+   return r
+end
+
+
 local function map_with(tt, fn)
    local r = {}
    for k, v in next, tt do
@@ -1260,6 +1271,24 @@ return {
    --   --> {a=2, b=4}
    --   mapvalues({a=1, b=2}, lambda '=_1 * 2')
    mapvalues = X('mapvalues(table, callable)', mapvalues),
+
+   --- A new table with the entries of each of some tables.
+   -- Where tables have a key in common, the last of them with it wins,
+   -- even if its value is `false`.  A nil argument is skipped.  Only the
+   -- entries of each table are copied, not its metatable, and not the
+   -- tables that they hold.
+   -- @function merged
+   -- @signature merged(<?table...>)
+   -- @tparam table ... tables to merge
+   -- @treturn table a new table of the entries of *...*
+   -- @see except
+   -- @usage
+   --   --> {a=1, b=3, c=4}
+   --   merged({a=1, b=2}, {b=3, c=4})
+   --
+   --   defaults = {color='red'}
+   --   options = merged(defaults, user_options)
+   merged = X('merged(<?table...>)', merged),
 
    --- A table of just some of the entries of a table.
    -- @function pluck

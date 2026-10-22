@@ -105,6 +105,9 @@
     consequent or alternative` except that either can be `false` or
     `nil`, and calls a function that it chooses.
 
+  - New `merged` makes a new table from the entries of several, where
+    the last table with a key wins.
+
   - `case` matches strings against patterns.
 
   - New `default` returns its first argument unless it is nil, for an
