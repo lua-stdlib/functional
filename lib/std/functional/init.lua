@@ -40,6 +40,7 @@ local _ENV = require 'std.normalize' {
    'string.format',
    'table.concat',
    'table.remove',
+   'table.sort',
 }
 
 
@@ -371,6 +372,62 @@ local function converge(x, limit, fn)
       x = r
    end
    error(format('no convergence after %d calls', limit), 2)
+end
+
+
+local function indexof(seq, ...)
+   local pred = topredicate(given(id, ...))
+   local i, found = 0, nil
+   walk(seq, function(...)
+      i = i + 1
+      if pred(...) then
+         found = i
+         return true
+      end
+   end)
+   return found
+end
+
+
+local function flatmap(seq, fn)
+   local r, n = {}, 0
+   walk(seq, function(...)
+      local items = fn(...)
+      if items ~= nil then
+         walk(items, function(item)
+            n = n + 1
+            r[n] = item
+         end)
+      end
+   end)
+   r.n = n
+   return r
+end
+
+
+local function sorted(seq, cmp)
+   cmp = default(cmp, function(a, b)
+      return a < b
+   end)
+   local items = collect(seq)
+   local decorated = {}
+   for i = 1, items.n do
+      decorated[i] = {items[i], i}
+   end
+   -- Items that neither one orders before the other keep their order.
+   sort(decorated, function(a, b)
+      if cmp(a[1], b[1]) then
+         return true
+      elseif cmp(b[1], a[1]) then
+         return false
+      end
+      return a[2] < b[2]
+   end)
+   local r = {n = items.n}
+   for i = 1, items.n do
+      r[i] = decorated[i][1]
+   end
+   return r
 end
 
 
@@ -750,6 +807,21 @@ return {
    --   filter({1, 2, 3, 4}, function(e) return e % 2 == 0 end)
    filter = X('filter(table|function, ?any)', filter),
 
+   --- Map a function over an iterable, and concatenate the results.
+   -- *fn* is called with all the results of an iteration, and returns an
+   -- iterable of items, such as a list, or nil for none.
+   -- @function flatmap
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @func fn function returning an iterable of the items to add
+   -- @treturn table a list of the items of every result, in order, with
+   --    its length in field `n`
+   -- @see flatten
+   -- @see map
+   -- @usage
+   --   --> {1, 1, 2, 2, n=4}
+   --   flatmap({1, 2}, function(e) return {e, e} end)
+   flatmap = X('flatmap(table|function, callable)', flatmap),
+
    --- Flatten a nested table into a list.
    -- @function flatten
    -- @tparam table t a table
@@ -912,6 +984,20 @@ return {
    --   shape({'a', 'b', 'c', 'd', 'e', 'f'}, {3, 2})
    shape = X('shape(table, table)', shape),
 
+   --- A sorted copy of an iterable.
+   -- The sort is stable: items that neither is ordered before the other
+   -- keep the order they had.
+   -- @function sorted
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @func[opt] cmp function to call with two items, returning `true` if
+   --    the first is ordered before the second; by default `<`
+   -- @treturn table a new list of the items in order, with its length in
+   --    field `n`
+   -- @usage
+   --   --> {1, 2, 3, n=3}
+   --   sorted {3, 1, 2}
+   sorted = X('sorted(table|function, [?callable])', sorted),
+
    --- Zip a table of tables.
    -- Make a new table, with lists of elements at the same index in the
    -- original table. This function is effectively its own inverse.
@@ -1000,6 +1086,23 @@ return {
    --   --> the first file that opens
    --   firstof(paths, io.open)
    firstof = X('firstof(table|function, [?any], callable)', firstof),
+
+   --- The position of the first item that passes a predicate.
+   -- The predicate is called with all the results of an iteration.  If
+   -- *pred* is omitted, it passes anything truthy, and anything
+   -- that is not a function is compared with each item, as `==`.
+   -- An explicit `nil`, unlike leaving *pred* out, is compared with the
+   -- items, as for @{contains}.
+   -- @function indexof
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param[opt] pred a predicate function, or a value to compare with
+   -- @treturn int|nil the position of the first item that passes, or
+   --    `nil` if there isn't one
+   -- @see detect
+   -- @usage
+   --   --> 2
+   --   indexof({'a', 'b', 'c'}, 'b')
+   indexof = X('indexof(table|function, [?any])', indexof),
 
    --- Whether a value is a table with nothing in it.
    -- A table with only an `n` field of 0 is empty too, as the list

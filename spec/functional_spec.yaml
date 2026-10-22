@@ -8,11 +8,11 @@ before:
    exported_apis = {
       'any', 'bind', 'callable', 'case', 'collect', 'compose', 'cond',
       'contains', 'converge', 'curry', 'default', 'detect', 'each', 'either', 'except',
-      'filter', 'firstof', 'flatten', 'foldl', 'foldr', 'id',
-      'invert', 'ireverse', 'isempty', 'iter', 'lambda', 'map', 'map_with',
-      'mapkeys', 'mapvalues', 'memoize', 'nop', 'partition', 'pluck',
-      'predicate', 'product', 'reject', 'shape', 'some', 'tabulate', 'values',
-      'zip', 'zip_with',
+      'filter', 'firstof', 'flatmap', 'flatten', 'foldl', 'foldr',
+      'id', 'indexof', 'invert', 'ireverse', 'isempty', 'iter', 'lambda',
+      'map', 'map_with', 'mapkeys', 'mapvalues', 'memoize', 'nop',
+      'partition', 'pluck', 'predicate', 'product', 'reject', 'shape', 'some',
+      'sorted', 'tabulate', 'values', 'zip', 'zip_with',
    }
 
    M = require(this_module)
@@ -632,6 +632,39 @@ specify functional:
       expect(f(3, 4, function(n) return n > 1 and n - 1 or n end)).to_be(1)
 
 
+- describe flatmap:
+  - before:
+      f = M.flatmap
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.flatmap(table|function, callable)', f)
+  - it accepts a lambda:
+      expect(f({1, 2}, M.lambda '={_1, _1}')).to_equal {n=4, 1, 1, 2, 2}
+
+  - it works with an empty table:
+      expect(f({}, M.id)).to_equal {n=0}
+  - it concatenates the lists that the function returns:
+      expect(f({'a', 'b'}, function(e) return {e, e .. '!'} end)).
+         to_equal {n=4, 'a', 'a!', 'b', 'b!'}
+  - it adds nothing for nil:
+      expect(f({1, 2, 3}, function(e) if e ~= 2 then return {e} end end)).
+         to_equal {n=2, 1, 3}
+  - it keeps holes in the lists:
+      expect(f({1}, function() return pack('a', nil, 'c') end)).
+         to_equal {n=3, 'a', [3]='c'}
+  - it takes the items of an iterator function:
+      expect(f({'a b', 'c'}, function(s) return s:gmatch '%a' end)).
+         to_equal {n=3, 'a', 'b', 'c'}
+  - it flattens only one level:
+      expect(f({1}, function() return {{1}, {2}} end)).to_equal {n=2, {1}, {2}}
+  - it maps over the results of an iterator function:
+      expect(f(('a b'):gmatch '%a', function(e) return {e, e} end)).
+         to_equal {n=4, 'a', 'a', 'b', 'b'}
+  - it passes all the results of an iteration to the function:
+      expect(f(M.iter(ipairs {'x', 'y'}), function(i, e) return {e .. i} end)).
+         to_equal {n=2, 'x1', 'y2'}
+
+
 - describe flatten:
   - before:
       t = {{{'one'}}, 'two', {{'three'}, 'four'}}
@@ -760,6 +793,44 @@ specify functional:
       expect(f(__index)).to_equal {'g', 'n', 'i', 'r', 't', 's', ' ', 'a'}
   - it works for an empty list:
       expect(f {}).to_equal {}
+
+
+- describe indexof:
+  - before:
+      f = M.indexof
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.indexof(table|function, [?any])', f)
+
+  - it works with an empty table:
+      expect(f {}).to_be(nil)
+  - it finds the position of an item equal to any other value:
+      expect(f({'a', 'b', 'c'}, 'b')).to_be(2)
+      expect(f({'a', 'b', 'a'}, 'a')).to_be(1)
+  - it finds the position of the first item that passes a predicate function:
+      expect(f({1, 2, 3, 4}, function(e) return e > 2 end)).to_be(3)
+  - it defaults to the first truthy item:
+      expect(f(pack(false, nil, 'x'))).to_be(3)
+      expect(f {false}).to_be(nil)
+  - it returns nil if no item passes:
+      expect(f({1, 2}, 3)).to_be(nil)
+  - it finds the position of the first nil with an explicit nil:
+      expect(f(pack('a', nil, 'x'), nil)).to_be(2)
+  - it counts holes:
+      expect(f(pack(nil, nil, 'x'), 'x')).to_be(3)
+      expect(f(pack('a', nil, 'x'), function(e) return e == nil end)).to_be(2)
+  - it treats a functable as a value:
+      functable = setmetatable({}, {__call = M.nop})
+      expect(f({1, functable}, functable)).to_be(2)
+  - it counts the items of an iterator function:
+      expect(f(('a b c'):gmatch '%a', 'c')).to_be(3)
+  - it passes all iteration results to the predicate:
+      expect(f(M.iter(ipairs {'a', 'b'}), function(i, e) return e == 'b' end)).
+         to_be(2)
+  - it does not look at items after one that passes:
+      n = 0
+      f({1, 2, 3}, function(e) n = n + 1 return true end)
+      expect(n).to_be(1)
 
 
 - describe invert:
@@ -1345,6 +1416,43 @@ specify functional:
          to_equal {a=true, b=true}
   - it passes all iteration results to the function:
       expect(f(M.iter(ipairs {'a', 'b'}), M.id)).to_equal {'a', 'b'}
+
+
+- describe sorted:
+  - before:
+      f = M.sorted
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.sorted(table|function, [?callable])', f)
+  - it accepts a lambda comparison:
+      expect(f({1, 3, 2}, M.lambda '=_1 > _2')).to_equal {n=3, 3, 2, 1}
+
+  - it works with an empty table:
+      expect(f {}).to_equal {n=0}
+  - it sorts by < by default:
+      expect(f {3, 1, 2}).to_equal {n=3, 1, 2, 3}
+      expect(f {'b', 'c', 'a'}).to_equal {n=3, 'a', 'b', 'c'}
+  - it sorts with a comparison function:
+      expect(f({1, 3, 2}, function(a, b) return a > b end)).to_equal {n=3, 3, 2, 1}
+  - it keeps the order of items that compare the same:
+      items = {{k=1, v='a'}, {k=0, v='b'}, {k=1, v='c'}, {k=0, v='d'}, {k=1, v='e'}}
+      r = f(items, function(a, b) return a.k < b.k end)
+      expect(M.map(r, function(e) return e.v end)).to_equal {n=5, 'b', 'd', 'a', 'c', 'e'}
+  - it keeps the order of a long run of equal items:
+      items = {}
+      for i = 1, 200 do items[i] = {k = i % 3, i = i} end
+      r = f(items, function(a, b) return a.k < b.k end)
+      for i = 2, 200 do
+         if r[i - 1].k == r[i].k and r[i - 1].i > r[i].i then
+            error 'not stable'
+         end
+      end
+  - it returns a new list, leaving the argument alone:
+      t = {3, 1, 2}
+      expect(f(t)).not_to_be(t)
+      expect(t).to_equal {3, 1, 2}
+  - it sorts the items of an iterator function:
+      expect(f(('c a b'):gmatch '%a')).to_equal {n=3, 'a', 'b', 'c'}
 
 
 - describe values:

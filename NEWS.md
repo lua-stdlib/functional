@@ -79,6 +79,11 @@
     table of just some of the entries of a table, `except` one without
     the keys that match, and `values` lists the values.
 
+  - New `flatmap` maps a function over an iterable, and concatenates the
+    lists that it returns, `indexof` finds the position of the first
+    item that passes a predicate, and `sorted` returns a sorted copy of
+    an iterable, keeping the order of items that compare the same.
+
   - New `converge` calls a function with a value, and then with each
     result, until the result is the same as its argument.  It raises an
     error if that has not happened after 1000 calls, or after the limit
