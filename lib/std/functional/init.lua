@@ -689,60 +689,8 @@ local function X(decl, fn)
 end
 
 return {
-   --- Call a series of functions until one returns non-nil.
-   -- @function any
-   -- @func ... functions to call
-   -- @treturn function to call fn1 .. fnN until one returns non-nil.
-   -- @usage
-   --   old_object_type = any(std.object.type, io.type, type)
-   any = X('any(callable...)', any),
-
-   --- Partially apply a function.
-   -- @function bind
-   -- @func fn function to apply partially
-   -- @tparam table argt table of *fn* arguments to bind
-   -- @return function with *argt* arguments already bound
-   -- @usage
-   --   cube = bind(std.functional.operator.pow, {[2] = 3})
-   bind = X('bind(callable, table)', bind),
-
-   --- Identify callable types.
-   -- @function callable
-   -- @param x an object or primitive
-   -- @return `true` if *x* can be called, otherwise `false`
-   -- @usage
-   --   if callable(functable) then functable(args) end
-   callable = X('callable([?any])', callable),
-
-   --- A rudimentary case statement.
-   -- Select a branch by matching *with* against *branches*: first as a
-   -- key, then, if *with* is a string, against the patterns of the
-   -- `{pattern, branch}` pairs in the array part of *branches*, in order,
-   -- and last, `branches.default`.  A key counts if its branch is not
-   -- nil, so a branch can be `false`.  A pattern is anchored at both
-   -- ends, and its captures, or the whole match if it has none, are
-   -- passed to its branch.  Integer keys share the array part with the
-   -- pattern pairs, so don't use both in one table.
-   -- @function case
-   -- @param with expression to match
-   -- @tparam table branches map possible matches to branches
-   -- @return the branch selected, or if it is a function or functable,
-   --    the result of calling it with *with* (or the captures of a
-   --    matching pattern); otherwise `nil`
-   -- @see cond
-   -- @usage
-   --   return case(type(object), {
-   --      table   = 'table',
-   --      string  = function() return 'string' end,
-   --      default = function(s) error('unhandled type: ' .. s) end,
-   --   })
-   --
-   --   case(arg, {
-   --      {'%-%-(%w+)=(.*)', function(name, value) opts[name] = value end},
-   --      {'%-(%w)', function(flag) opts[flag] = true end},
-   --      default = function(s) files[#files + 1] = s end,
-   --   })
-   case = X('case(?any, table)', case),
+   --- Iterables and lists
+   -- @section lists
 
    --- Collect the items of an iterable into a list.
    -- An iterable is a table, whose items are its values from 1 to its `n`
@@ -758,99 +706,6 @@ return {
    --   collect(iter(ipairs {'a', 'b', 'c'}))
    collect = X('collect(table|function)', collect),
 
-   --- Compose functions.
-   -- @function compose
-   -- @func ... functions to compose
-   -- @treturn function composition of fnN .. fn1: note that this is the
-   -- reverse of what you might expect, but means that code like:
-   --
-   --     compose(function(x) return f(x) end,
-   --                        function(x) return g(x) end))
-   --
-   -- can be read from top to bottom.
-   -- @usage
-   --   vpairs = compose(table.invert, ipairs)
-   --   for v, i in vpairs {'a', 'b', 'c'} do process(v, i) end
-   compose = X('compose(callable...)', compose),
-
-   --- A rudimentary condition-case statement.
-   -- Each clause is a `{test, branch}` pair, and the first clause whose
-   -- *test* is 'truthy' selects its *branch*, as an if/elseif chain
-   -- does; use a `true` test for the last clause to make it the default.
-   -- A test can be nil, which is 'falsey' like any other.
-   -- @function cond
-   -- @tparam table ... clauses `{test, branch}` pairs
-   -- @return the branch of the first clause that passes, or if it is a
-   --    function or functable, the result of calling it with the *test*;
-   --    otherwise `nil`
-   -- @see case
-   -- @usage
-   --   -- recursively calculate the nth triangular number
-   --   function triangle(n)
-   --      return cond(
-   --         {n <= 0, 0},
-   --         {n == 1, 1},
-   --         {true, function() return n + triangle(n - 1) end})
-   --   end
-   cond = X('cond([table...])', cond),
-
-   --- Whether any item of an iterable matches a value or predicate.
-   -- Anything but a plain function is compared with each item, as `==`,
-   -- so `contains(t, nil)` asks whether *t* has a hole.  Use
-   -- @{predicate} to call a functable.  Deep equality is
-   -- `bind(operator.eqv, {x})`.
-   -- @function contains
-   -- @tparam table|function seq an iterable, see @{collect}
-   -- @param x a value to compare with, or a predicate function
-   -- @treturn boolean `true` if any item matches, otherwise `false`
-   -- @see some
-   -- @usage
-   --   --> true
-   --   contains({'a', 'b', 'c'}, 'b')
-   contains = X('contains(table|function, ?any)', contains),
-
-   --- Curry a function.
-   -- @function curry
-   -- @func fn function to curry
-   -- @int n number of arguments
-   -- @treturn function curried version of *fn*
-   -- @usage
-   --   add = curry(function(x, y) return x + y end, 2)
-   --   incr, decr = add(1), add(-1)
-   curry = X('curry(callable, int)', curry),
-
-   --- A value, unless it is nil, then a default.
-   -- Only nil is missing, so `false`, `0`, an empty string or table, and
-   -- a functable such as a @{lambda}, which is an empty table, are all
-   -- values that *x* can be.  Use it for an optional argument.  Unlike
-   -- `either`, which is for a result that can be empty, an empty table
-   -- is something.
-   -- @function default
-   -- @param x a value
-   -- @param[opt] d what to return if *x* is nil
-   -- @return *x*, or *d*
-   -- @usage
-   --   cmp = default(cmp, function(a, b) return a < b end)
-   default = X('default(?any, [?any])', default),
-
-   --- Find the first item of an iterable that passes a predicate.
-   -- The predicate is called with all the results of an iteration.  If
-   -- *pred* is omitted, it passes anything truthy, as in @{some}:
-   -- use `detect(seq, false)` to find `false`.
-   -- An explicit `nil`, unlike leaving *pred* out, is compared with the
-   -- items, as for @{contains}.
-   -- @function detect
-   -- @tparam table|function seq an iterable, see @{collect}
-   -- @param[opt] pred a predicate function, or a value to compare with
-   -- @return the first item that passes, or `nil` if there isn't one
-   -- @see filter
-   -- @see firstof
-   -- @see predicate
-   -- @usage
-   --   --> 'b'
-   --   detect({'a', 'b', 'c'}, function(e) return e > 'a' end)
-   detect = X('detect(table|function, [?any])', detect),
-
    --- Call a function with each item of an iterable, for its effects.
    -- The function is called with all the results of an iteration, and
    -- every item is visited, whatever it returns.  Use @{some} or
@@ -862,35 +717,6 @@ return {
    -- @usage
    --   each(args, function(arg) print(arg) end)
    each = X('each(table|function, callable)', each),
-
-   --- A value, unless it is nil or an empty table, then a default.
-   -- Unlike `x or default`, an empty table counts as nothing, and
-   -- `false` is a value like any other.
-   -- @function either
-   -- @param x a value
-   -- @param[opt] default what to return if *x* is nil or empty
-   -- @return *x*, or *default*
-   -- @see isempty
-   -- @usage
-   --   --> {'unix'}
-   --   either({}, {'unix'})
-   either = X('either(?any, [?any])', either),
-
-   --- A copy of a table without the keys that match a key or predicate.
-   -- Anything but a plain function is compared with each key, as `==`.
-   -- Use @{pluck} to keep keys instead.
-   -- @function except
-   -- @tparam table t a table
-   -- @param pred a predicate function to call with each key, or a key
-   --    to compare with
-   -- @treturn table a new table of the entries of *t* for the keys that
-   --    do not match, which is empty if there are none
-   -- @see pluck
-   -- @see reject
-   -- @usage
-   --   --> {b=2, c=3}
-   --   except({a=1, b=2, c=3}, 'a')
-   except = X('except(table, ?any)', except),
 
    --- Filter the items of an iterable with a predicate.
    -- Only a plain function is a predicate; anything else, a functable
@@ -907,29 +733,6 @@ return {
    --   --> {2, 4, n=2}
    --   filter({1, 2, 3, 4}, function(e) return e % 2 == 0 end)
    filter = X('filter(table|function, ?any)', filter),
-
-   --- The first result of calling a function with each item that passes.
-   -- *fn* is called with all the results of an iteration, and the
-   -- predicate with all the results of that call.  The call, and so the
-   -- iteration, stops at the first call that passes, and its first result
-   -- is returned, so *fn* is not called for items after it.  If *pred* is
-   -- omitted, it passes anything truthy.
-   -- An explicit `nil` for *pred*, unlike leaving it out, is compared with
-   -- the results.
-   -- @function firstof
-   -- @tparam table|function seq an iterable, see @{collect}
-   -- @param[opt] pred a predicate function, or a value to compare with
-   -- @func fn function to call with each item
-   -- @return the first result of the first call of *fn* that passes, or
-   --    `nil` if there isn't one
-   -- @see detect
-   -- @see some
-   -- @usage
-   --   --> 'two': parse is not called for items after 2
-   --   firstof({1, 2, 3}, function(e) if e == 2 then return 'two' end end)
-   --   --> the first file that opens
-   --   firstof(paths, io.open)
-   firstof = X('firstof(table|function, [?any], callable)', firstof),
 
    --- Flatten a nested table into a list.
    -- @function flatten
@@ -970,23 +773,20 @@ return {
    --   foldr({10000, 100}, 10, operator.quot) == 10000 / (100 / 10)
    foldr = X('foldr(table|function, [any], callable)', foldr),
 
-   --- Swap the keys and values of a table.
-   -- If more than one key has the same value, one of them wins.
-   -- @function invert
+   --- Return a new sequence with element order reversed.
+   --
+   -- Apart from the order of the elements returned, this function follows
+   -- the same rules as @{ipairs} for determining first and last elements.
+   -- @function ireverse
    -- @tparam table t a table
-   -- @treturn table a new table with the values of *t* for keys, and its
-   --    keys for values
-   -- @see tabulate
+   -- @treturn table a new table with integer keyed elements in reverse
+   --    order with respect to *t*
+   -- @see ipairs
    -- @usage
-   --   --> {a=1, b=2}
-   --   invert {'a', 'b'}
-   invert = X('invert(table)', invert),
-
-   --- Identity function.
-   -- @function id
-   -- @param ... arguments
-   -- @return *arguments*
-   id = id,   -- any number of any type arguments!
+   --   --> bar
+   --   --> foo
+   --   map(ireverse {'foo', 'bar', [4]='baz', d=5}, print)
+   ireverse = X('ireverse(table)', ireverse),
 
    --- Make an iterator function from a generic-for triple.
    -- Each call passes on all of the results of the next iteration, and
@@ -1003,57 +803,6 @@ return {
    --   local next_pair = iter(pairs {a=1, b=2})
    iter = X('iter(callable, [?any...])', iter),
 
-   --- Whether a value is a table with nothing in it.
-   -- A table with only an `n` field of 0 is empty too, as the list
-   -- results of this module are.
-   -- @function isempty
-   -- @param x a value
-   -- @treturn boolean `true` if *x* is an empty table, otherwise `false`
-   -- @see either
-   -- @usage
-   --   --> true, true, false
-   --   isempty {}, isempty(table.pack()), isempty ''
-   isempty = X('isempty(?any)', isempty),
-
-   --- Return a new sequence with element order reversed.
-   --
-   -- Apart from the order of the elements returned, this function follows
-   -- the same rules as @{ipairs} for determining first and last elements.
-   -- @function ireverse
-   -- @tparam table t a table
-   -- @treturn table a new table with integer keyed elements in reverse
-   --    order with respect to *t*
-   -- @see ipairs
-   -- @usage
-   --   --> bar
-   --   --> foo
-   --   map(ireverse {'foo', 'bar', [4]='baz', d=5}, print)
-   ireverse = X('ireverse(table)', ireverse),
-
-   --- Compile a lambda string into a Lua function.
-   --
-   -- A valid lambda string takes one of the following forms:
-   --
-   --    1. `'=expression'`: equivalent to `function(...) return expression end`
-   --    1. `'|args|expression'`: equivalent to `function(args) return expression end`
-   --
-   -- The first form (starting with `'='`) automatically assigns the first
-   -- nine arguments to parameters `'_1'` through `'_9'` for use within the
-   -- expression body.   The parameter `'_1'` is aliased to `'_'`, and if the
-   -- first non-whitespace of the whole expression is `'_'`, then the
-   -- leading `'='` can be omitted.
-   --
-   -- The results are memoized, so recompiling a previously compiled
-   -- lambda string is extremely fast.
-   -- @function lambda
-   -- @string s a lambda string
-   -- @treturn functable compiled lambda string, can be called like a function
-   -- @usage
-   --   -- The following are equivalent:
-   --   lambda '= _1 < _2'
-   --   lambda '|a,b| a<b'
-   lambda = X('lambda(string)', lambda),
-
    --- Map a function over the items of an iterable.
    -- The function is called with all the results of an iteration.
    -- @function map
@@ -1069,21 +818,6 @@ return {
    --   map({1, 2, 3, 4}, lambda '=_1*_1')
    map = X('map(table|function, callable)', map),
 
-   --- Map a function over the keys of a table.
-   -- The values are kept.  If *fn* returns nil for a key, the entry is
-   -- left out, and if it returns the same key for more than one, one of
-   -- them wins.
-   -- @function mapkeys
-   -- @tparam table t a table
-   -- @func fn map function, called with each key
-   -- @treturn table a new table of the values of *t* for the results of
-   --    *fn*
-   -- @see mapvalues
-   -- @usage
-   --   --> {A=1, B=2}
-   --   mapkeys({a=1, b=2}, string.upper)
-   mapkeys = X('mapkeys(table, callable)', mapkeys),
-
    --- Map a function over a table of argument lists.
    -- @function map_with
    -- @tparam table tt a table of *fn* argument lists
@@ -1096,54 +830,6 @@ return {
    --   conc = bind(map_with, {[2] = lambda '|...|table.concat {...}'})
    --   conc {{1, 2, 3}, {4, 5}}, conc {a={1, 2, 3, x='y'}, b={4, 5, z=6}}
    map_with = X('map_with(table of tables, callable)', map_with),
-
-   --- Map a function over the values of a table.
-   -- Keys are kept.  The result of *fn* is stored as it is, so a value can
-   -- map to `false`; return the value itself to pass it through, and
-   -- return nil to leave the key out of the result.
-   -- @function mapvalues
-   -- @tparam table t a table
-   -- @func fn map function, called with each value
-   -- @treturn table a new table of the same keys, and the results of *fn*
-   -- @see map
-   -- @usage
-   --   --> {a=2, b=4}
-   --   mapvalues({a=1, b=2}, lambda '=_1 * 2')
-   mapvalues = X('mapvalues(table, callable)', mapvalues),
-
-   --- Memoize a function, by wrapping it in a functable.
-   --
-   -- To ensure that memoize always returns the same results for the same
-   -- arguments, it passes arguments to *fn*. You can specify a more
-   -- sophisticated function if memoize should handle complicated argument
-   -- equivalencies.
-   -- @function memoize
-   -- @func fn pure function: a function with no side effects
-   -- @tparam[opt=std.tostring] mnemonic mnemonicfn how to remember the arguments
-   -- @treturn functable memoized function
-   -- @usage
-   --   local fast = memoize(function(...) --[[ slow code ]] end)
-   memoize = X('memoize(callable, [?callable])', memoize),
-
-   --- No operation.
-   -- This function ignores all arguments, and returns no values.
-   -- @function nop
-   -- @see id
-   -- @usage
-   --   if unsupported then vtable['memrmem'] = nop end
-   nop = function() end,
-
-   --- Functional list product.
-   --
-   -- Return a list of each combination possible by taking a single
-   -- element from each of the argument lists.
-   -- @function product
-   -- @param ... operands
-   -- @return result
-   -- @usage
-   --   --> {'000', '001', '010', '011', '100', '101', '110', '111'}
-   --   map(product({0,1}, {0, 1}, {0, 1}), table.concat)
-   product = X('product(list...)', product),
 
    --- Split the items of an iterable by a predicate.
    -- @function partition
@@ -1159,41 +845,17 @@ return {
    --   partition({1, 2, 3, 4}, function(e) return e % 2 == 0 end)
    partition = X('partition(table|function, ?any)', partition),
 
-   --- A table of just some of the entries of a table.
-   -- @function pluck
-   -- @tparam table t a table
-   -- @tparam table|function keys an iterable of keys, see @{collect}
-   -- @treturn table a new table of the entries of *t* for those keys,
-   --    leaving out any that are nil, which is empty if there are none
-   -- @see except
-   -- @usage
-   --   --> {a=1, c=3}
-   --   pluck({a=1, b=2, c=3}, {'a', 'c', 'd'})
-   pluck = X('pluck(table, table|function)', pluck),
-
-   --- Make a predicate from a value, a function or a functable.
-   -- A plain function is returned as is, and a @{lambda} is unwrapped to
-   -- the function inside it, so that its source string can no longer be
-   -- recovered.  Any other callable is wrapped in a plain function that
-   -- calls it, since it may use its own table when it is called.
-   -- Anything else becomes a test for equality (as `==`, so honouring
-   -- `__eq`) with it, including `nil`.
+   --- Functional list product.
    --
-   -- Functions that take a predicate, or a value to test for, treat a
-   -- plain function as the predicate and everything else, a functable
-   -- included, as a value, because functables in a sequence are usually
-   -- data: a std.prototype object, for example, is callable.  Pass
-   -- `predicate(functable)` to use a functable as the predicate instead,
-   -- and to search for a function value, use `bind(operator.eq, {f})`.
-   -- For deep equality use `bind(operator.eqv, {x})`.
-   -- @function predicate
-   -- @param x a value, a function that tests a value, or a functable
-   -- @treturn function a predicate for *x*
+   -- Return a list of each combination possible by taking a single
+   -- element from each of the argument lists.
+   -- @function product
+   -- @param ... operands
+   -- @return result
    -- @usage
-   --   is_five = predicate(5)
-   --   is_five(5), is_five(6) --> true, false
-   --   is_even = predicate(lambda '|e| e % 2 == 0')
-   predicate = X('predicate(?any)', predicate),
+   --   --> {'000', '001', '010', '011', '100', '101', '110', '111'}
+   --   map(product({0,1}, {0, 1}, {0, 1}), table.concat)
+   product = X('product(list...)', product),
 
    --- Reject the items of an iterable that pass a predicate.
    -- The opposite of @{filter}.
@@ -1234,45 +896,6 @@ return {
    --   shape({'a', 'b', 'c', 'd', 'e', 'f'}, {3, 2})
    shape = X('shape(table, table)', shape),
 
-   --- Whether any item of an iterable passes a predicate.
-   -- If *pred* is omitted, it passes anything truthy.
-   -- An explicit `nil`, unlike leaving *pred* out, is compared with the
-   -- items, as for @{contains}.
-   -- @function some
-   -- @tparam table|function seq an iterable, see @{collect}
-   -- @param[opt] pred a predicate function, or a value to compare with
-   -- @treturn boolean `true` if any item passes, otherwise `false`
-   -- @see contains
-   -- @usage
-   --   --> true
-   --   some({false, 'x'})
-   some = X('some(table|function, [?any])', some),
-
-   --- Make a table from the key and value results of a function.
-   -- Items for which *fn* returns a nil key are left out, and a later
-   -- result for a key replaces an earlier one.
-   -- @function tabulate
-   -- @tparam table|function seq an iterable, see @{collect}
-   -- @func fn function called with all the results of an iteration, to
-   --    return a key and a value
-   -- @treturn table a table of the keys and values from *fn*
-   -- @see map
-   -- @usage
-   --   --> {a=1, b=2}
-   --   tabulate(iter(pairs {1, 2}), function(i, v) return ({'a', 'b'})[i], v end)
-   tabulate = X('tabulate(table|function, callable)', tabulate),
-
-   --- The values of a table.
-   -- Like `table.keys` in std.normalize, the order is not specified.
-   -- @function values
-   -- @tparam table t a table
-   -- @treturn table a list of the values of *t*, with its length in
-   --    field `n`
-   -- @usage
-   --   --> {1, 2, n=2}, in some order
-   --   values {a=1, b=2}
-   values = X('values(table)', values),
-
    --- Zip a table of tables.
    -- Make a new table, with lists of elements at the same index in the
    -- original table. This function is effectively its own inverse.
@@ -1302,6 +925,398 @@ return {
    --   conc = bind(zip_with, {[2] = lambda '|...|table.concat {...}'})
    --   conc {{1, 2}, {3, 4}, {5}}, conc {{a=1, b=2}, x={a=3, b=4}, {b=5}}
    zip_with = X('zip_with(table of tables, callable)', zip_with),
+
+   --- Searching and predicates
+   -- @section search
+
+   --- Whether any item of an iterable matches a value or predicate.
+   -- Anything but a plain function is compared with each item, as `==`,
+   -- so `contains(t, nil)` asks whether *t* has a hole.  Use
+   -- @{predicate} to call a functable.  Deep equality is
+   -- `bind(operator.eqv, {x})`.
+   -- @function contains
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param x a value to compare with, or a predicate function
+   -- @treturn boolean `true` if any item matches, otherwise `false`
+   -- @see some
+   -- @usage
+   --   --> true
+   --   contains({'a', 'b', 'c'}, 'b')
+   contains = X('contains(table|function, ?any)', contains),
+
+   --- Find the first item of an iterable that passes a predicate.
+   -- The predicate is called with all the results of an iteration.  If
+   -- *pred* is omitted, it passes anything truthy, as in @{some}:
+   -- use `detect(seq, false)` to find `false`.
+   -- An explicit `nil`, unlike leaving *pred* out, is compared with the
+   -- items, as for @{contains}.
+   -- @function detect
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param[opt] pred a predicate function, or a value to compare with
+   -- @return the first item that passes, or `nil` if there isn't one
+   -- @see filter
+   -- @see firstof
+   -- @see predicate
+   -- @usage
+   --   --> 'b'
+   --   detect({'a', 'b', 'c'}, function(e) return e > 'a' end)
+   detect = X('detect(table|function, [?any])', detect),
+
+   --- The first result of calling a function with each item that passes.
+   -- *fn* is called with all the results of an iteration, and the
+   -- predicate with all the results of that call.  The call, and so the
+   -- iteration, stops at the first call that passes, and its first result
+   -- is returned, so *fn* is not called for items after it.  If *pred* is
+   -- omitted, it passes anything truthy.
+   -- An explicit `nil` for *pred*, unlike leaving it out, is compared with
+   -- the results.
+   -- @function firstof
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param[opt] pred a predicate function, or a value to compare with
+   -- @func fn function to call with each item
+   -- @return the first result of the first call of *fn* that passes, or
+   --    `nil` if there isn't one
+   -- @see detect
+   -- @see some
+   -- @usage
+   --   --> 'two': parse is not called for items after 2
+   --   firstof({1, 2, 3}, function(e) if e == 2 then return 'two' end end)
+   --   --> the first file that opens
+   --   firstof(paths, io.open)
+   firstof = X('firstof(table|function, [?any], callable)', firstof),
+
+   --- Whether a value is a table with nothing in it.
+   -- A table with only an `n` field of 0 is empty too, as the list
+   -- results of this module are.
+   -- @function isempty
+   -- @param x a value
+   -- @treturn boolean `true` if *x* is an empty table, otherwise `false`
+   -- @see either
+   -- @usage
+   --   --> true, true, false
+   --   isempty {}, isempty(table.pack()), isempty ''
+   isempty = X('isempty(?any)', isempty),
+
+   --- Make a predicate from a value, a function or a functable.
+   -- A plain function is returned as is, and a @{lambda} is unwrapped to
+   -- the function inside it, so that its source string can no longer be
+   -- recovered.  Any other callable is wrapped in a plain function that
+   -- calls it, since it may use its own table when it is called.
+   -- Anything else becomes a test for equality (as `==`, so honouring
+   -- `__eq`) with it, including `nil`.
+   --
+   -- Functions that take a predicate, or a value to test for, treat a
+   -- plain function as the predicate and everything else, a functable
+   -- included, as a value, because functables in a sequence are usually
+   -- data: a std.prototype object, for example, is callable.  Pass
+   -- `predicate(functable)` to use a functable as the predicate instead,
+   -- and to search for a function value, use `bind(operator.eq, {f})`.
+   -- For deep equality use `bind(operator.eqv, {x})`.
+   -- @function predicate
+   -- @param x a value, a function that tests a value, or a functable
+   -- @treturn function a predicate for *x*
+   -- @usage
+   --   is_five = predicate(5)
+   --   is_five(5), is_five(6) --> true, false
+   --   is_even = predicate(lambda '|e| e % 2 == 0')
+   predicate = X('predicate(?any)', predicate),
+
+   --- Whether any item of an iterable passes a predicate.
+   -- If *pred* is omitted, it passes anything truthy.
+   -- An explicit `nil`, unlike leaving *pred* out, is compared with the
+   -- items, as for @{contains}.
+   -- @function some
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param[opt] pred a predicate function, or a value to compare with
+   -- @treturn boolean `true` if any item passes, otherwise `false`
+   -- @see contains
+   -- @usage
+   --   --> true
+   --   some({false, 'x'})
+   some = X('some(table|function, [?any])', some),
+
+   --- Tables
+   -- @section tables
+
+   --- A copy of a table without the keys that match a key or predicate.
+   -- Anything but a plain function is compared with each key, as `==`.
+   -- Use @{pluck} to keep keys instead.
+   -- @function except
+   -- @tparam table t a table
+   -- @param pred a predicate function to call with each key, or a key
+   --    to compare with
+   -- @treturn table a new table of the entries of *t* for the keys that
+   --    do not match, which is empty if there are none
+   -- @see pluck
+   -- @see reject
+   -- @usage
+   --   --> {b=2, c=3}
+   --   except({a=1, b=2, c=3}, 'a')
+   except = X('except(table, ?any)', except),
+
+   --- Swap the keys and values of a table.
+   -- If more than one key has the same value, one of them wins.
+   -- @function invert
+   -- @tparam table t a table
+   -- @treturn table a new table with the values of *t* for keys, and its
+   --    keys for values
+   -- @see tabulate
+   -- @usage
+   --   --> {a=1, b=2}
+   --   invert {'a', 'b'}
+   invert = X('invert(table)', invert),
+
+   --- Map a function over the keys of a table.
+   -- The values are kept.  If *fn* returns nil for a key, the entry is
+   -- left out, and if it returns the same key for more than one, one of
+   -- them wins.
+   -- @function mapkeys
+   -- @tparam table t a table
+   -- @func fn map function, called with each key
+   -- @treturn table a new table of the values of *t* for the results of
+   --    *fn*
+   -- @see mapvalues
+   -- @usage
+   --   --> {A=1, B=2}
+   --   mapkeys({a=1, b=2}, string.upper)
+   mapkeys = X('mapkeys(table, callable)', mapkeys),
+
+   --- Map a function over the values of a table.
+   -- Keys are kept.  The result of *fn* is stored as it is, so a value can
+   -- map to `false`; return the value itself to pass it through, and
+   -- return nil to leave the key out of the result.
+   -- @function mapvalues
+   -- @tparam table t a table
+   -- @func fn map function, called with each value
+   -- @treturn table a new table of the same keys, and the results of *fn*
+   -- @see map
+   -- @usage
+   --   --> {a=2, b=4}
+   --   mapvalues({a=1, b=2}, lambda '=_1 * 2')
+   mapvalues = X('mapvalues(table, callable)', mapvalues),
+
+   --- A table of just some of the entries of a table.
+   -- @function pluck
+   -- @tparam table t a table
+   -- @tparam table|function keys an iterable of keys, see @{collect}
+   -- @treturn table a new table of the entries of *t* for those keys,
+   --    leaving out any that are nil, which is empty if there are none
+   -- @see except
+   -- @usage
+   --   --> {a=1, c=3}
+   --   pluck({a=1, b=2, c=3}, {'a', 'c', 'd'})
+   pluck = X('pluck(table, table|function)', pluck),
+
+   --- Make a table from the key and value results of a function.
+   -- Items for which *fn* returns a nil key are left out, and a later
+   -- result for a key replaces an earlier one.
+   -- @function tabulate
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @func fn function called with all the results of an iteration, to
+   --    return a key and a value
+   -- @treturn table a table of the keys and values from *fn*
+   -- @see map
+   -- @usage
+   --   --> {a=1, b=2}
+   --   tabulate(iter(pairs {1, 2}), function(i, v) return ({'a', 'b'})[i], v end)
+   tabulate = X('tabulate(table|function, callable)', tabulate),
+
+   --- The values of a table.
+   -- Like `table.keys` in std.normalize, the order is not specified.
+   -- @function values
+   -- @tparam table t a table
+   -- @treturn table a list of the values of *t*, with its length in
+   --    field `n`
+   -- @usage
+   --   --> {1, 2, n=2}, in some order
+   --   values {a=1, b=2}
+   values = X('values(table)', values),
+
+   --- Functions
+   -- @section functions
+
+   --- Call a series of functions until one returns non-nil.
+   -- @function any
+   -- @func ... functions to call
+   -- @treturn function to call fn1 .. fnN until one returns non-nil.
+   -- @usage
+   --   old_object_type = any(std.object.type, io.type, type)
+   any = X('any(callable...)', any),
+
+   --- Partially apply a function.
+   -- @function bind
+   -- @func fn function to apply partially
+   -- @tparam table argt table of *fn* arguments to bind
+   -- @return function with *argt* arguments already bound
+   -- @usage
+   --   cube = bind(std.functional.operator.pow, {[2] = 3})
+   bind = X('bind(callable, table)', bind),
+
+   --- Identify callable types.
+   -- @function callable
+   -- @param x an object or primitive
+   -- @return `true` if *x* can be called, otherwise `false`
+   -- @usage
+   --   if callable(functable) then functable(args) end
+   callable = X('callable([?any])', callable),
+
+   --- Compose functions.
+   -- @function compose
+   -- @func ... functions to compose
+   -- @treturn function composition of fnN .. fn1: note that this is the
+   -- reverse of what you might expect, but means that code like:
+   --
+   --     compose(function(x) return f(x) end,
+   --                        function(x) return g(x) end))
+   --
+   -- can be read from top to bottom.
+   -- @usage
+   --   vpairs = compose(table.invert, ipairs)
+   --   for v, i in vpairs {'a', 'b', 'c'} do process(v, i) end
+   compose = X('compose(callable...)', compose),
+
+   --- Curry a function.
+   -- @function curry
+   -- @func fn function to curry
+   -- @int n number of arguments
+   -- @treturn function curried version of *fn*
+   -- @usage
+   --   add = curry(function(x, y) return x + y end, 2)
+   --   incr, decr = add(1), add(-1)
+   curry = X('curry(callable, int)', curry),
+
+   --- Identity function.
+   -- @function id
+   -- @param ... arguments
+   -- @return *arguments*
+   id = id,   -- any number of any type arguments!
+
+   --- Compile a lambda string into a Lua function.
+   --
+   -- A valid lambda string takes one of the following forms:
+   --
+   --    1. `'=expression'`: equivalent to `function(...) return expression end`
+   --    1. `'|args|expression'`: equivalent to `function(args) return expression end`
+   --
+   -- The first form (starting with `'='`) automatically assigns the first
+   -- nine arguments to parameters `'_1'` through `'_9'` for use within the
+   -- expression body.   The parameter `'_1'` is aliased to `'_'`, and if the
+   -- first non-whitespace of the whole expression is `'_'`, then the
+   -- leading `'='` can be omitted.
+   --
+   -- The results are memoized, so recompiling a previously compiled
+   -- lambda string is extremely fast.
+   -- @function lambda
+   -- @string s a lambda string
+   -- @treturn functable compiled lambda string, can be called like a function
+   -- @usage
+   --   -- The following are equivalent:
+   --   lambda '= _1 < _2'
+   --   lambda '|a,b| a<b'
+   lambda = X('lambda(string)', lambda),
+
+   --- Memoize a function, by wrapping it in a functable.
+   --
+   -- To ensure that memoize always returns the same results for the same
+   -- arguments, it passes arguments to *fn*. You can specify a more
+   -- sophisticated function if memoize should handle complicated argument
+   -- equivalencies.
+   -- @function memoize
+   -- @func fn pure function: a function with no side effects
+   -- @tparam[opt=std.tostring] mnemonic mnemonicfn how to remember the arguments
+   -- @treturn functable memoized function
+   -- @usage
+   --   local fast = memoize(function(...) --[[ slow code ]] end)
+   memoize = X('memoize(callable, [?callable])', memoize),
+
+   --- No operation.
+   -- This function ignores all arguments, and returns no values.
+   -- @function nop
+   -- @see id
+   -- @usage
+   --   if unsupported then vtable['memrmem'] = nop end
+   nop = function() end,
+
+   --- Dispatch and selection
+   -- @section dispatch
+
+   --- A rudimentary case statement.
+   -- Select a branch by matching *with* against *branches*: first as a
+   -- key, then, if *with* is a string, against the patterns of the
+   -- `{pattern, branch}` pairs in the array part of *branches*, in order,
+   -- and last, `branches.default`.  A key counts if its branch is not
+   -- nil, so a branch can be `false`.  A pattern is anchored at both
+   -- ends, and its captures, or the whole match if it has none, are
+   -- passed to its branch.  Integer keys share the array part with the
+   -- pattern pairs, so don't use both in one table.
+   -- @function case
+   -- @param with expression to match
+   -- @tparam table branches map possible matches to branches
+   -- @return the branch selected, or if it is a function or functable,
+   --    the result of calling it with *with* (or the captures of a
+   --    matching pattern); otherwise `nil`
+   -- @see cond
+   -- @usage
+   --   return case(type(object), {
+   --      table   = 'table',
+   --      string  = function() return 'string' end,
+   --      default = function(s) error('unhandled type: ' .. s) end,
+   --   })
+   --
+   --   case(arg, {
+   --      {'%-%-(%w+)=(.*)', function(name, value) opts[name] = value end},
+   --      {'%-(%w)', function(flag) opts[flag] = true end},
+   --      default = function(s) files[#files + 1] = s end,
+   --   })
+   case = X('case(?any, table)', case),
+
+   --- A rudimentary condition-case statement.
+   -- Each clause is a `{test, branch}` pair, and the first clause whose
+   -- *test* is 'truthy' selects its *branch*, as an if/elseif chain
+   -- does; use a `true` test for the last clause to make it the default.
+   -- A test can be nil, which is 'falsey' like any other.
+   -- @function cond
+   -- @tparam table ... clauses `{test, branch}` pairs
+   -- @return the branch of the first clause that passes, or if it is a
+   --    function or functable, the result of calling it with the *test*;
+   --    otherwise `nil`
+   -- @see case
+   -- @usage
+   --   -- recursively calculate the nth triangular number
+   --   function triangle(n)
+   --      return cond(
+   --         {n <= 0, 0},
+   --         {n == 1, 1},
+   --         {true, function() return n + triangle(n - 1) end})
+   --   end
+   cond = X('cond([table...])', cond),
+
+   --- A value, unless it is nil, then a default.
+   -- Only nil is missing, so `false`, `0`, an empty string or table, and
+   -- a functable such as a @{lambda}, which is an empty table, are all
+   -- values that *x* can be.  Use it for an optional argument.  Unlike
+   -- `either`, which is for a result that can be empty, an empty table
+   -- is something.
+   -- @function default
+   -- @param x a value
+   -- @param[opt] d what to return if *x* is nil
+   -- @return *x*, or *d*
+   -- @usage
+   --   cmp = default(cmp, function(a, b) return a < b end)
+   default = X('default(?any, [?any])', default),
+
+   --- A value, unless it is nil or an empty table, then a default.
+   -- Unlike `x or default`, an empty table counts as nothing, and
+   -- `false` is a value like any other.
+   -- @function either
+   -- @param x a value
+   -- @param[opt] default what to return if *x* is nil or empty
+   -- @return *x*, or *default*
+   -- @see isempty
+   -- @usage
+   --   --> {'unix'}
+   --   either({}, {'unix'})
+   either = X('either(?any, [?any])', either),
 }
 
 
