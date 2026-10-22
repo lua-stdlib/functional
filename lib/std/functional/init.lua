@@ -591,6 +591,77 @@ local function tabulate(seq, fn)
 end
 
 
+local function isempty(x)
+   if type(x) ~= 'table' then
+      return false
+   end
+   local k = next(x)
+   return k == nil or (k == 'n' and x.n == 0 and next(x, k) == nil)
+end
+
+
+local function either(x, default)
+   if x == nil or isempty(x) then
+      return default
+   end
+   return x
+end
+
+
+local function except(t, pred)
+   pred = topredicate(pred)
+   local r = {}
+   for k, v in next, t do
+      if not pred(k) then
+         r[k] = v
+      end
+   end
+   return r
+end
+
+
+local function pluck(t, keys)
+   local r = {}
+   walk(keys, function(k)
+      local v = t[k]
+      if v ~= nil then
+         r[k] = v
+      end
+   end)
+   return r
+end
+
+
+local function mapkeys(t, fn)
+   local r = {}
+   for k, v in next, t do
+      local key = fn(k)
+      if key ~= nil then
+         r[key] = v
+      end
+   end
+   return r
+end
+
+
+local function values(t)
+   local r, n = {}, 0
+   for _, v in next, t do
+      n = n + 1
+      r[n] = v
+   end
+   r.n = n
+   return r
+end
+
+
+local function invert(t)
+   return tabulate(iter(next, t), function(k, v)
+      return v, k
+   end)
+end
+
+
 local function zip(tt)
    local r = {}
    for outerk, inner in next, tt do
@@ -792,6 +863,35 @@ return {
    --   each(args, function(arg) print(arg) end)
    each = X('each(table|function, callable)', each),
 
+   --- A value, unless it is nil or an empty table, then a default.
+   -- Unlike `x or default`, an empty table counts as nothing, and
+   -- `false` is a value like any other.
+   -- @function either
+   -- @param x a value
+   -- @param[opt] default what to return if *x* is nil or empty
+   -- @return *x*, or *default*
+   -- @see isempty
+   -- @usage
+   --   --> {'unix'}
+   --   either({}, {'unix'})
+   either = X('either(?any, [?any])', either),
+
+   --- A copy of a table without the keys that match a key or predicate.
+   -- Anything but a plain function is compared with each key, as `==`.
+   -- Use @{pluck} to keep keys instead.
+   -- @function except
+   -- @tparam table t a table
+   -- @param pred a predicate function to call with each key, or a key
+   --    to compare with
+   -- @treturn table a new table of the entries of *t* for the keys that
+   --    do not match, which is empty if there are none
+   -- @see pluck
+   -- @see reject
+   -- @usage
+   --   --> {b=2, c=3}
+   --   except({a=1, b=2, c=3}, 'a')
+   except = X('except(table, ?any)', except),
+
    --- Filter the items of an iterable with a predicate.
    -- Only a plain function is a predicate; anything else, a functable
    -- included, is a value to compare each item with, as `==`.  Use
@@ -870,6 +970,18 @@ return {
    --   foldr({10000, 100}, 10, operator.quot) == 10000 / (100 / 10)
    foldr = X('foldr(table|function, [any], callable)', foldr),
 
+   --- Swap the keys and values of a table.
+   -- If more than one key has the same value, one of them wins.
+   -- @function invert
+   -- @tparam table t a table
+   -- @treturn table a new table with the values of *t* for keys, and its
+   --    keys for values
+   -- @see tabulate
+   -- @usage
+   --   --> {a=1, b=2}
+   --   invert {'a', 'b'}
+   invert = X('invert(table)', invert),
+
    --- Identity function.
    -- @function id
    -- @param ... arguments
@@ -890,6 +1002,18 @@ return {
    --   --> {'a', 1}, {'b', 2}
    --   local next_pair = iter(pairs {a=1, b=2})
    iter = X('iter(callable, [?any...])', iter),
+
+   --- Whether a value is a table with nothing in it.
+   -- A table with only an `n` field of 0 is empty too, as the list
+   -- results of this module are.
+   -- @function isempty
+   -- @param x a value
+   -- @treturn boolean `true` if *x* is an empty table, otherwise `false`
+   -- @see either
+   -- @usage
+   --   --> true, true, false
+   --   isempty {}, isempty(table.pack()), isempty ''
+   isempty = X('isempty(?any)', isempty),
 
    --- Return a new sequence with element order reversed.
    --
@@ -944,6 +1068,21 @@ return {
    --   --> {1, 4, 9, 16, n=4}
    --   map({1, 2, 3, 4}, lambda '=_1*_1')
    map = X('map(table|function, callable)', map),
+
+   --- Map a function over the keys of a table.
+   -- The values are kept.  If *fn* returns nil for a key, the entry is
+   -- left out, and if it returns the same key for more than one, one of
+   -- them wins.
+   -- @function mapkeys
+   -- @tparam table t a table
+   -- @func fn map function, called with each key
+   -- @treturn table a new table of the values of *t* for the results of
+   --    *fn*
+   -- @see mapvalues
+   -- @usage
+   --   --> {A=1, B=2}
+   --   mapkeys({a=1, b=2}, string.upper)
+   mapkeys = X('mapkeys(table, callable)', mapkeys),
 
    --- Map a function over a table of argument lists.
    -- @function map_with
@@ -1019,6 +1158,18 @@ return {
    --   --> {2, 4, n=2}, {1, 3, n=2}
    --   partition({1, 2, 3, 4}, function(e) return e % 2 == 0 end)
    partition = X('partition(table|function, ?any)', partition),
+
+   --- A table of just some of the entries of a table.
+   -- @function pluck
+   -- @tparam table t a table
+   -- @tparam table|function keys an iterable of keys, see @{collect}
+   -- @treturn table a new table of the entries of *t* for those keys,
+   --    leaving out any that are nil, which is empty if there are none
+   -- @see except
+   -- @usage
+   --   --> {a=1, c=3}
+   --   pluck({a=1, b=2, c=3}, {'a', 'c', 'd'})
+   pluck = X('pluck(table, table|function)', pluck),
 
    --- Make a predicate from a value, a function or a functable.
    -- A plain function is returned as is, and a @{lambda} is unwrapped to
@@ -1110,6 +1261,17 @@ return {
    --   --> {a=1, b=2}
    --   tabulate(iter(pairs {1, 2}), function(i, v) return ({'a', 'b'})[i], v end)
    tabulate = X('tabulate(table|function, callable)', tabulate),
+
+   --- The values of a table.
+   -- Like `table.keys` in std.normalize, the order is not specified.
+   -- @function values
+   -- @tparam table t a table
+   -- @treturn table a list of the values of *t*, with its length in
+   --    field `n`
+   -- @usage
+   --   --> {1, 2, n=2}, in some order
+   --   values {a=1, b=2}
+   values = X('values(table)', values),
 
    --- Zip a table of tables.
    -- Make a new table, with lists of elements at the same index in the

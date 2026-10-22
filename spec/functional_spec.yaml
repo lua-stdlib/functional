@@ -7,10 +7,12 @@ before:
 
    exported_apis = {
       'any', 'bind', 'callable', 'case', 'collect', 'compose', 'cond',
-      'contains', 'curry', 'default', 'detect', 'each', 'filter', 'firstof',
-      'flatten', 'foldl', 'foldr', 'id', 'iter', 'ireverse', 'lambda', 'map',
-      'map_with', 'mapvalues', 'memoize', 'nop', 'partition', 'predicate',
-      'product', 'reject', 'shape', 'some', 'tabulate', 'zip', 'zip_with',
+      'contains', 'curry', 'default', 'detect', 'each', 'either', 'except',
+      'filter', 'firstof', 'flatten', 'foldl', 'foldr', 'id', 'invert',
+      'ireverse', 'isempty', 'iter', 'lambda', 'map', 'map_with', 'mapkeys',
+      'mapvalues', 'memoize', 'nop', 'partition', 'pluck', 'predicate',
+      'product', 'reject', 'shape', 'some', 'tabulate', 'values', 'zip',
+      'zip_with',
    }
 
    M = require(this_module)
@@ -461,6 +463,52 @@ specify functional:
       expect(t).to_equal {'a', 'b'}
 
 
+- describe either:
+  - before:
+      f = M.either
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.either(?any, [?any])', f)
+
+  - it returns its first argument:
+      expect(f('a', 'b')).to_be 'a'
+      expect(f({1}, {2})).to_equal {1}
+  - it returns the default for nil or an empty table:
+      expect(f(nil, 'b')).to_be 'b'
+      expect(f({}, 'b')).to_be 'b'
+      expect(f(pack(), 'b')).to_be 'b'
+  - it keeps false, an empty string and zero:
+      expect(f(false, 'b')).to_be(false)
+      expect(f('', 'b')).to_be ''
+      expect(f(0, 'b')).to_be(0)
+  - it returns nil without a default:
+      expect(f {}).to_be(nil)
+
+
+- describe except:
+  - before:
+      f = M.except
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.except(table, ?any)', f)
+
+  - it copies a table without a key:
+      expect(f({a=1, b=2, 'x'}, 'a')).to_equal {b=2, 'x'}
+  - it copies a table without the keys that pass a predicate function:
+      expect(f({a=1, b=2, c=3}, function(k) return k ~= 'b' end)).to_equal {b=2}
+  - it compares keys with any other value:
+      expect(f({[1]='x', [2]='y'}, 2)).to_equal {'x'}
+  - it treats a functable as a value:
+      functable = setmetatable({}, {__call = M.nop})
+      expect(f({[functable]=1, a=2}, functable)).to_equal {a=2}
+  - it returns a new table, even when nothing is left:
+      t = {a=1}
+      expect(f(t, 'a')).to_equal {}
+      expect(t).to_equal {a=1}
+  - it keeps false values:
+      expect(f({a=false, b=1}, 'b')).to_equal {a=false}
+
+
 - describe filter:
   - before:
       elements = {'a', 'b', 'c', 'd', 'e'}
@@ -663,6 +711,49 @@ specify functional:
       expect(f {}).to_equal {}
 
 
+- describe invert:
+  - before:
+      f = M.invert
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.invert(table)', f)
+
+  - it swaps the keys and values:
+      expect(f {a=1, b=2}).to_equal {'a', 'b'}
+      expect(f {'x', 'y'}).to_equal {x=1, y=2}
+  - it works with an empty table:
+      expect(f {}).to_equal {}
+  - it keeps one of the keys for a repeated value:
+      expect({'a', 'b'}).to_contain(f({a=1, b=1})[1])
+  - it returns a new table:
+      t = {a=1}
+      expect(f(t)).not_to_be(t)
+
+
+- describe isempty:
+  - before:
+      f = M.isempty
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.isempty(?any)', f)
+
+  - it is true for an empty table:
+      expect(f {}).to_be(true)
+  - it is true for an empty list:
+      expect(f(pack())).to_be(true)
+      expect(f(M.collect {})).to_be(true)
+  - it is false for a table with entries:
+      expect(f {1}).to_be(false)
+      expect(f {a=1}).to_be(false)
+      expect(f(pack(nil))).to_be(false)
+  - it is false for a table with only a non-zero n field:
+      expect(f {n=1}).to_be(false)
+  - it is false for anything else:
+      expect(f(nil)).to_be(false)
+      expect(f '').to_be(false)
+      expect(f(false)).to_be(false)
+
+
 - describe lambda:
   - before:
       f = M.lambda
@@ -796,6 +887,32 @@ specify functional:
   - it does not perturb the argument table:
       f(elements, M.id)
       expect(elements).to_equal {'a', 'b', 'c', 'd', 'e'}
+
+
+- describe mapkeys:
+  - before:
+      f = M.mapkeys
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.mapkeys(table, callable)', f)
+  - it accepts a lambda:
+      expect(f({a=1}, M.lambda '=_1 .. "!"')).to_equal {['a!']=1}
+
+  - it works with an empty table:
+      expect(f({}, M.id)).to_equal {}
+  - it maps every key, and keeps the values:
+      expect(f({a=1, b=2}, string.upper)).to_equal {A=1, B=2}
+  - it keeps false values:
+      expect(f({a=false}, string.upper)).to_equal {A=false}
+  - it leaves out entries for which the function returns nil:
+      expect(f({a=1, b=2}, function(k) if k == 'b' then return k end end)).
+         to_equal {b=2}
+  - it passes only the key:
+      expect(f({a=1}, function(...) return select('#', ...) end)).to_equal {[1]=1}
+  - it does not perturb the argument table:
+      t = {a=1}
+      f(t, string.upper)
+      expect(t).to_equal {a=1}
 
 
 - describe map_with:
@@ -969,6 +1086,33 @@ specify functional:
       pass, fail = f(M.iter(ipairs {'a', 'b', 'c'}), function(i, e) return e == 'b' end)
       expect(pass).to_equal {n=1, 2}
       expect(fail).to_equal {n=2, 1, 3}
+
+
+- describe pluck:
+  - before:
+      f = M.pluck
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.pluck(table, table|function)', f)
+
+  - it works with an empty table:
+      expect(f({}, {'a'})).to_equal {}
+  - it copies just the entries for the keys:
+      expect(f({a=1, b=2, c=3}, {'a', 'c'})).to_equal {a=1, c=3}
+  - it leaves out keys that are not in the table:
+      expect(f({a=1}, {'a', 'z'})).to_equal {a=1}
+  - it returns an empty table if there are none:
+      expect(f({a=1}, {'z'})).to_equal {}
+  - it keeps false values:
+      expect(f({a=false}, {'a'})).to_equal {a=false}
+  - it ignores holes in the keys:
+      expect(f({a=1}, pack('a', nil))).to_equal {a=1}
+  - it takes the keys from an iterator function:
+      expect(f({a=1, b=2, c=3}, ('a c'):gmatch '%a')).to_equal {a=1, c=3}
+  - it does not perturb the argument table:
+      t = {a=1}
+      f(t, {'a'})
+      expect(t).to_equal {a=1}
 
 
 - describe predicate:
@@ -1150,6 +1294,26 @@ specify functional:
          to_equal {a=true, b=true}
   - it passes all iteration results to the function:
       expect(f(M.iter(ipairs {'a', 'b'}), M.id)).to_equal {'a', 'b'}
+
+
+- describe values:
+  - before:
+      f = M.values
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.values(table)', f)
+
+  - it works with an empty table:
+      expect(f {}).to_equal {n=0}
+  - it lists the values, with n:
+      r = f {a=1, b=2, c=3}
+      expect(r.n).to_be(3)
+      expect({r[1], r[2], r[3]}).to_contain.a_permutation_of {1, 2, 3}
+  - it lists every value, including false:
+      expect(f {a=false}).to_equal {n=1, false}
+  - it returns a new table:
+      t = {1}
+      expect(f(t)).not_to_be(t)
 
 
 - describe zip:

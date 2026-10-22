@@ -73,8 +73,15 @@
     without calling it for later items.
 
   - New `mapvalues` maps the values of a table, keeping its keys and
-    storing `false` results, and `tabulate` makes a table from the keys
-    and values that a function returns.
+    storing `false` results, and `mapkeys` maps its keys.  `tabulate`
+    makes a table from the keys and values that a function returns, and
+    `invert` swaps the keys and values of a table.  `pluck` makes a
+    table of just some of the entries of a table, `except` one without
+    the keys that match, and `values` lists the values.
+
+  - New `isempty` says whether a table has nothing in it, and `either`
+    returns its first argument unless it is nil or empty, where `x or
+    default` only looks for `nil` and `false`.
 
   - New `predicate` makes a predicate from a value, a function or a
     functable.
