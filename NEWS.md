@@ -101,6 +101,14 @@
   - New `default` returns its first argument unless it is nil, for an
     optional argument.
 
+  - Optional arguments follow the signature that each function
+    documents: leave out one in `[...]`, and the arguments after it move
+    up to take its place, so a `nil` in its place is a value, while one
+    in `<...>` can only be left out with every argument after it.
+    `some`, `detect` and `indexof` tell a missing predicate, which
+    passes anything truthy, from `nil`, which is compared with the
+    items.
+
 ### Bug fixes
 
   - `map` passes every result of every iteration to its function, even

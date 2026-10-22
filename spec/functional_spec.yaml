@@ -98,7 +98,7 @@ specify functional:
       f = M.callable
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.callable([?any])', f)
+      badargs.diagnose('std.functional.callable(<?any>)', f)
 
   - it returns the function associated with a callable:
       for _, v in ipairs {
@@ -266,7 +266,7 @@ specify functional:
       f = M.cond
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.cond([table...])', f)
+      badargs.diagnose('std.functional.cond(<table...>)', f)
 
   - it returns nil for no arguments:
       expect(f()).to_be(nil)
@@ -370,7 +370,7 @@ specify functional:
       f = M.default
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.default(?any, [?any])', f)
+      badargs.diagnose('std.functional.default(?any, <?any>)', f)
 
   - it returns its first argument:
       expect(f('a', 'b')).to_be 'a'
@@ -396,7 +396,7 @@ specify functional:
       f = M.detect
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.detect(table|function, [?any])', f)
+      badargs.diagnose('std.functional.detect(table|function, <?any>)', f)
 
   - it works with an empty table:
       expect(f({})).to_be(nil)
@@ -468,7 +468,7 @@ specify functional:
       f = M.either
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.either(?any, [?any])', f)
+      badargs.diagnose('std.functional.either(?any, <?any>)', f)
 
   - it returns its first argument:
       expect(f('a', 'b')).to_be 'a'
@@ -800,7 +800,7 @@ specify functional:
       f = M.indexof
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.indexof(table|function, [?any])', f)
+      badargs.diagnose('std.functional.indexof(table|function, <?any>)', f)
 
   - it works with an empty table:
       expect(f {}).to_be(nil)
@@ -936,7 +936,7 @@ specify functional:
       f = M.iter
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.iter(callable, [?any...])', f)
+      badargs.diagnose('std.functional.iter(callable, <?any...>)', f)
 
   - it returns an iterator function:
       expect(type(f(pairs {}))).to_be 'function'
@@ -1109,7 +1109,7 @@ specify functional:
       end)
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.memoize(callable, [?callable])', f)
+      badargs.diagnose('std.functional.memoize(callable, <?callable>)', f)
   - it accepts a lambda function and mnemonic:
       expect(f(M.lambda '=_1 * 2', M.lambda '=tostring(_1)')(4)).to_be(8)
 
@@ -1360,7 +1360,7 @@ specify functional:
       f = M.some
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.some(table|function, [?any])', f)
+      badargs.diagnose('std.functional.some(table|function, <?any>)', f)
 
   - it works with an empty table:
       expect(f {}).to_be(false)
@@ -1423,7 +1423,7 @@ specify functional:
       f = M.sorted
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.sorted(table|function, [?callable])', f)
+      badargs.diagnose('std.functional.sorted(table|function, <?callable>)', f)
   - it accepts a lambda comparison:
       expect(f({1, 3, 2}, M.lambda '=_1 > _2')).to_equal {n=3, 3, 2, 1}
 
@@ -1522,3 +1522,38 @@ specify functional:
   - it combines matching key entries with a function:
       expect(f({{a=1,b=2}, {a=3,b=4}, {b=5}}, fn)).
          to_equal {a=13, b=245}
+
+- describe documentation:
+  - before:
+      -- Each function's documented signature, and the declaration that
+      -- its arguments are checked against, from the source.
+      function read_signatures()
+         local src = assert(package.searchpath('std.functional.init', package.path))
+         local documented, declared, name = {}, {}, nil
+         for line in io.lines(src) do
+            name = line:match '^   %-%- @function ([%w_]+)%s*$' or name
+            local sig = line:match '^   %-%- @signature (.-)%s*$'
+            if sig ~= nil then
+               documented[name] = sig
+            end
+            local fn, decl = line:match "^   ([%w_]+) = X%('(.-)', [%w_]+%),"
+            if fn ~= nil then
+               declared[fn] = decl
+            end
+         end
+         return documented, declared
+      end
+
+  - it documents a signature for every exported function:
+      documented = read_signatures()
+      missing = {}
+      for i = 1, (#exported_apis) do
+         name = exported_apis[i]
+         if documented[name] == nil then missing[#missing + 1] = name end
+      end
+      expect(missing).to_equal {}
+  - it documents each declaration that arguments are checked against:
+      documented, declared = read_signatures()
+      for name, decl in next, declared do
+         expect(documented[name]).to_be(decl)
+      end

@@ -22,6 +22,22 @@
  called with all the results of an iteration.  Functions that return
  several items return lists, with their length in field `n`.
 
+ Each function documents its calling convention as a *Signature*, in the
+ syntax of typecheck declarations: `|` separates alternative types, `?`
+ marks an argument that may be nil, `[...]` one that may be left out
+ even when others follow it, `<...>` one that may only be left out along
+ with every argument after it, and `...` stands for any number more of
+ the same.  So `foldl(table|function, [any], callable)` takes an
+ iterable, optionally an initial value, and a function, and
+ `detect(table|function, <?any>)` takes an iterable, and optionally a
+ predicate.
+
+ When an argument in `[...]` is left out, the arguments after it move up
+ to take its place, so a `nil` passed there is a value.  An argument in
+ `<...>` is the last that is passed, and it can be left out, or be nil,
+ which are not the same where `nil` is a value to compare with: `some(t)`
+ tests for anything truthy, but `some(t, nil)` tests for a nil item.
+
  A predicate is a plain function.  Anything else that is passed where a
  predicate is wanted, a functable such as a @{lambda} included, is a
  value to compare each item with, as `==`.  Use @{predicate} to call a
@@ -771,6 +787,7 @@ return {
    -- its first nil result.  Where an iterator function returns several
    -- values, the item is the first of them.
    -- @function collect
+   -- @signature collect(table|function)
    -- @tparam table|function seq an iterable
    -- @treturn table a list of the items, with its length in field `n`
    -- @see iter
@@ -784,6 +801,7 @@ return {
    -- every item is visited, whatever it returns.  Use @{some} or
    -- @{firstof} to stop early.
    -- @function each
+   -- @signature each(table|function, callable)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @func fn function called with each item
    -- @see map
@@ -797,6 +815,7 @@ return {
    -- @{predicate} to call a functable.  The predicate is called with all
    -- the results of an iteration, and the item kept is the first of them.
    -- @function filter
+   -- @signature filter(table|function, ?any)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param pred a predicate function, or a value to compare with
    -- @treturn table a list of the items that pass, with its length in
@@ -811,6 +830,7 @@ return {
    -- *fn* is called with all the results of an iteration, and returns an
    -- iterable of items, such as a list, or nil for none.
    -- @function flatmap
+   -- @signature flatmap(table|function, callable)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @func fn function returning an iterable of the items to add
    -- @treturn table a list of the items of every result, in order, with
@@ -824,6 +844,7 @@ return {
 
    --- Flatten a nested table into a list.
    -- @function flatten
+   -- @signature flatten(table)
    -- @tparam table t a table
    -- @treturn table a list of all non-table elements of *t*
    -- @usage
@@ -836,6 +857,7 @@ return {
    -- iteration, from the left.  If *fn* returns nil, the accumulator is
    -- left as it was.
    -- @function foldl
+   -- @signature foldl(table|function, [any], callable)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param[opt={}] acc initial accumulator
    -- @func fn binary function
@@ -852,6 +874,7 @@ return {
    -- first result of each iteration is passed on.  If *fn* returns nil,
    -- the accumulator is left as it was.
    -- @function foldr
+   -- @signature foldr(table|function, [any], callable)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param[opt={}] acc initial accumulator
    -- @func fn binary function
@@ -866,6 +889,7 @@ return {
    -- Apart from the order of the elements returned, this function follows
    -- the same rules as @{ipairs} for determining first and last elements.
    -- @function ireverse
+   -- @signature ireverse(table)
    -- @tparam table t a table
    -- @treturn table a new table with integer keyed elements in reverse
    --    order with respect to *t*
@@ -882,6 +906,7 @@ return {
    -- stateless iterator, such as `pairs(t)`, where an iterator function
    -- is wanted.
    -- @function iter
+   -- @signature iter(callable, <?any...>)
    -- @func f iterator function, as in a generic `for`
    -- @param[opt] s invariant state, passed to *f* on every call
    -- @param[opt] c initial control variable
@@ -889,11 +914,12 @@ return {
    -- @usage
    --   --> {'a', 1}, {'b', 2}
    --   local next_pair = iter(pairs {a=1, b=2})
-   iter = X('iter(callable, [?any...])', iter),
+   iter = X('iter(callable, <?any...>)', iter),
 
    --- Map a function over the items of an iterable.
    -- The function is called with all the results of an iteration.
    -- @function map
+   -- @signature map(table|function, callable)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @func fn map function
    -- @treturn table a list of the first result of *fn* for each item,
@@ -908,6 +934,7 @@ return {
 
    --- Map a function over a table of argument lists.
    -- @function map_with
+   -- @signature map_with(table of tables, callable)
    -- @tparam table tt a table of *fn* argument lists
    -- @func fn map function
    -- @treturn table new table of *fn* results
@@ -921,6 +948,7 @@ return {
 
    --- Split the items of an iterable by a predicate.
    -- @function partition
+   -- @signature partition(table|function, ?any)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param pred a predicate function, or a value to compare with
    -- @treturn table a list of the items that pass, with its length in
@@ -938,6 +966,7 @@ return {
    -- Return a list of each combination possible by taking a single
    -- element from each of the argument lists.
    -- @function product
+   -- @signature product(list...)
    -- @param ... operands
    -- @return result
    -- @usage
@@ -948,6 +977,7 @@ return {
    --- Reject the items of an iterable that pass a predicate.
    -- The opposite of @{filter}.
    -- @function reject
+   -- @signature reject(table|function, ?any)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param pred a predicate function, or a value to compare with
    -- @treturn table a list of the items that fail, with its length in
@@ -976,6 +1006,7 @@ return {
    -- @todo Use ileaves instead of flatten (needs a while instead of a
    -- for in fill function)
    -- @function shape
+   -- @signature shape(table, table)
    -- @tparam table t a table of elements
    -- @tparam table dims table of dimensions `{d1, ..., dn}`
    -- @return reshaped list
@@ -988,6 +1019,7 @@ return {
    -- The sort is stable: items that neither is ordered before the other
    -- keep the order they had.
    -- @function sorted
+   -- @signature sorted(table|function, <?callable>)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @func[opt] cmp function to call with two items, returning `true` if
    --    the first is ordered before the second; by default `<`
@@ -996,12 +1028,13 @@ return {
    -- @usage
    --   --> {1, 2, 3, n=3}
    --   sorted {3, 1, 2}
-   sorted = X('sorted(table|function, [?callable])', sorted),
+   sorted = X('sorted(table|function, <?callable>)', sorted),
 
    --- Zip a table of tables.
    -- Make a new table, with lists of elements at the same index in the
    -- original table. This function is effectively its own inverse.
    -- @function zip
+   -- @signature zip(table of tables)
    -- @tparam table tt a table of tables
    -- @treturn table new table with lists of elements of the same key
    --    from *tt*
@@ -1014,6 +1047,7 @@ return {
 
    --- Zip a list of tables together with a function.
    -- @function zip_with
+   -- @signature zip_with(table of tables, callable)
    -- @tparam table tt table of tables
    -- @tparam function fn function
    -- @treturn table a new table of results from calls to *fn* with arguments
@@ -1037,6 +1071,7 @@ return {
    -- @{predicate} to call a functable.  Deep equality is
    -- `bind(operator.eqv, {x})`.
    -- @function contains
+   -- @signature contains(table|function, ?any)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param x a value to compare with, or a predicate function
    -- @treturn boolean `true` if any item matches, otherwise `false`
@@ -1053,6 +1088,7 @@ return {
    -- An explicit `nil`, unlike leaving *pred* out, is compared with the
    -- items, as for @{contains}.
    -- @function detect
+   -- @signature detect(table|function, <?any>)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param[opt] pred a predicate function, or a value to compare with
    -- @return the first item that passes, or `nil` if there isn't one
@@ -1062,7 +1098,7 @@ return {
    -- @usage
    --   --> 'b'
    --   detect({'a', 'b', 'c'}, function(e) return e > 'a' end)
-   detect = X('detect(table|function, [?any])', detect),
+   detect = X('detect(table|function, <?any>)', detect),
 
    --- The first result of calling a function with each item that passes.
    -- *fn* is called with all the results of an iteration, and the
@@ -1073,6 +1109,7 @@ return {
    -- An explicit `nil` for *pred*, unlike leaving it out, is compared with
    -- the results.
    -- @function firstof
+   -- @signature firstof(table|function, [?any], callable)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param[opt] pred a predicate function, or a value to compare with
    -- @func fn function to call with each item
@@ -1094,6 +1131,7 @@ return {
    -- An explicit `nil`, unlike leaving *pred* out, is compared with the
    -- items, as for @{contains}.
    -- @function indexof
+   -- @signature indexof(table|function, <?any>)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param[opt] pred a predicate function, or a value to compare with
    -- @treturn int|nil the position of the first item that passes, or
@@ -1102,12 +1140,13 @@ return {
    -- @usage
    --   --> 2
    --   indexof({'a', 'b', 'c'}, 'b')
-   indexof = X('indexof(table|function, [?any])', indexof),
+   indexof = X('indexof(table|function, <?any>)', indexof),
 
    --- Whether a value is a table with nothing in it.
    -- A table with only an `n` field of 0 is empty too, as the list
    -- results of this module are.
    -- @function isempty
+   -- @signature isempty(?any)
    -- @param x a value
    -- @treturn boolean `true` if *x* is an empty table, otherwise `false`
    -- @see either
@@ -1132,6 +1171,7 @@ return {
    -- and to search for a function value, use `bind(operator.eq, {f})`.
    -- For deep equality use `bind(operator.eqv, {x})`.
    -- @function predicate
+   -- @signature predicate(?any)
    -- @param x a value, a function that tests a value, or a functable
    -- @treturn function a predicate for *x*
    -- @usage
@@ -1145,6 +1185,7 @@ return {
    -- An explicit `nil`, unlike leaving *pred* out, is compared with the
    -- items, as for @{contains}.
    -- @function some
+   -- @signature some(table|function, <?any>)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param[opt] pred a predicate function, or a value to compare with
    -- @treturn boolean `true` if any item passes, otherwise `false`
@@ -1152,7 +1193,7 @@ return {
    -- @usage
    --   --> true
    --   some({false, 'x'})
-   some = X('some(table|function, [?any])', some),
+   some = X('some(table|function, <?any>)', some),
 
    --- Tables
    -- @section tables
@@ -1161,6 +1202,7 @@ return {
    -- Anything but a plain function is compared with each key, as `==`.
    -- Use @{pluck} to keep keys instead.
    -- @function except
+   -- @signature except(table, ?any)
    -- @tparam table t a table
    -- @param pred a predicate function to call with each key, or a key
    --    to compare with
@@ -1176,6 +1218,7 @@ return {
    --- Swap the keys and values of a table.
    -- If more than one key has the same value, one of them wins.
    -- @function invert
+   -- @signature invert(table)
    -- @tparam table t a table
    -- @treturn table a new table with the values of *t* for keys, and its
    --    keys for values
@@ -1190,6 +1233,7 @@ return {
    -- left out, and if it returns the same key for more than one, one of
    -- them wins.
    -- @function mapkeys
+   -- @signature mapkeys(table, callable)
    -- @tparam table t a table
    -- @func fn map function, called with each key
    -- @treturn table a new table of the values of *t* for the results of
@@ -1205,6 +1249,7 @@ return {
    -- map to `false`; return the value itself to pass it through, and
    -- return nil to leave the key out of the result.
    -- @function mapvalues
+   -- @signature mapvalues(table, callable)
    -- @tparam table t a table
    -- @func fn map function, called with each value
    -- @treturn table a new table of the same keys, and the results of *fn*
@@ -1216,6 +1261,7 @@ return {
 
    --- A table of just some of the entries of a table.
    -- @function pluck
+   -- @signature pluck(table, table|function)
    -- @tparam table t a table
    -- @tparam table|function keys an iterable of keys, see @{collect}
    -- @treturn table a new table of the entries of *t* for those keys,
@@ -1230,6 +1276,7 @@ return {
    -- Items for which *fn* returns a nil key are left out, and a later
    -- result for a key replaces an earlier one.
    -- @function tabulate
+   -- @signature tabulate(table|function, callable)
    -- @tparam table|function seq an iterable, see @{collect}
    -- @func fn function called with all the results of an iteration, to
    --    return a key and a value
@@ -1245,6 +1292,7 @@ return {
    -- every field is a value, so the `n` field of a list with a length is
    -- one too: use @{collect} to list the items of a list.
    -- @function values
+   -- @signature values(table)
    -- @tparam table t a table
    -- @treturn table a list of the values of *t*, with its length in
    --    field `n`
@@ -1258,6 +1306,7 @@ return {
 
    --- Call a series of functions until one returns non-nil.
    -- @function any
+   -- @signature any(callable...)
    -- @func ... functions to call
    -- @treturn function to call fn1 .. fnN until one returns non-nil.
    -- @usage
@@ -1266,6 +1315,7 @@ return {
 
    --- Partially apply a function.
    -- @function bind
+   -- @signature bind(callable, table)
    -- @func fn function to apply partially
    -- @tparam table argt table of *fn* arguments to bind
    -- @return function with *argt* arguments already bound
@@ -1275,14 +1325,16 @@ return {
 
    --- Identify callable types.
    -- @function callable
+   -- @signature callable(<?any>)
    -- @param x an object or primitive
    -- @return `true` if *x* can be called, otherwise `false`
    -- @usage
    --   if callable(functable) then functable(args) end
-   callable = X('callable([?any])', callable),
+   callable = X('callable(<?any>)', callable),
 
    --- Compose functions.
    -- @function compose
+   -- @signature compose(callable...)
    -- @func ... functions to compose
    -- @treturn function composition of fnN .. fn1: note that this is the
    -- reverse of what you might expect, but means that code like:
@@ -1313,6 +1365,7 @@ return {
 
    --- Curry a function.
    -- @function curry
+   -- @signature curry(callable, int)
    -- @func fn function to curry
    -- @int n number of arguments
    -- @treturn function curried version of *fn*
@@ -1323,6 +1376,7 @@ return {
 
    --- Identity function.
    -- @function id
+   -- @signature id(<?any...>)
    -- @param ... arguments
    -- @return *arguments*
    id = id,   -- any number of any type arguments!
@@ -1343,6 +1397,7 @@ return {
    -- The results are memoized, so recompiling a previously compiled
    -- lambda string is extremely fast.
    -- @function lambda
+   -- @signature lambda(string)
    -- @string s a lambda string
    -- @treturn functable compiled lambda string, can be called like a function
    -- @usage
@@ -1358,16 +1413,18 @@ return {
    -- sophisticated function if memoize should handle complicated argument
    -- equivalencies.
    -- @function memoize
+   -- @signature memoize(callable, <?callable>)
    -- @func fn pure function: a function with no side effects
    -- @tparam[opt=std.tostring] mnemonic mnemonicfn how to remember the arguments
    -- @treturn functable memoized function
    -- @usage
    --   local fast = memoize(function(...) --[[ slow code ]] end)
-   memoize = X('memoize(callable, [?callable])', memoize),
+   memoize = X('memoize(callable, <?callable>)', memoize),
 
    --- No operation.
    -- This function ignores all arguments, and returns no values.
    -- @function nop
+   -- @signature nop(<?any...>)
    -- @see id
    -- @usage
    --   if unsupported then vtable['memrmem'] = nop end
@@ -1386,6 +1443,7 @@ return {
    -- passed to its branch.  Integer keys share the array part with the
    -- pattern pairs, so don't use both in one table.
    -- @function case
+   -- @signature case(?any, table)
    -- @param with expression to match
    -- @tparam table branches map possible matches to branches
    -- @return the branch selected, or if it is a function or functable,
@@ -1412,6 +1470,7 @@ return {
    -- does; use a `true` test for the last clause to make it the default.
    -- A test can be nil, which is 'falsey' like any other.
    -- @function cond
+   -- @signature cond(<table...>)
    -- @tparam table ... clauses `{test, branch}` pairs
    -- @return the branch of the first clause that passes, or if it is a
    --    function or functable, the result of calling it with the *test*;
@@ -1425,7 +1484,7 @@ return {
    --         {n == 1, 1},
    --         {true, function() return n + triangle(n - 1) end})
    --   end
-   cond = X('cond([table...])', cond),
+   cond = X('cond(<table...>)', cond),
 
    --- A value, unless it is nil, then a default.
    -- Only nil is missing, so `false`, `0`, an empty string or table, and
@@ -1434,17 +1493,19 @@ return {
    -- `either`, which is for a result that can be empty, an empty table
    -- is something.
    -- @function default
+   -- @signature default(?any, <?any>)
    -- @param x a value
    -- @param[opt] d what to return if *x* is nil
    -- @return *x*, or *d*
    -- @usage
    --   cmp = default(cmp, function(a, b) return a < b end)
-   default = X('default(?any, [?any])', default),
+   default = X('default(?any, <?any>)', default),
 
    --- A value, unless it is nil or an empty table, then a default.
    -- Unlike `x or default`, an empty table counts as nothing, and
    -- `false` is a value like any other.
    -- @function either
+   -- @signature either(?any, <?any>)
    -- @param x a value
    -- @param[opt] default what to return if *x* is nil or empty
    -- @return *x*, or *default*
@@ -1452,7 +1513,7 @@ return {
    -- @usage
    --   --> {'unix'}
    --   either({}, {'unix'})
-   either = X('either(?any, [?any])', either),
+   either = X('either(?any, <?any>)', either),
 }
 
 

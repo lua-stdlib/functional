@@ -31,6 +31,11 @@ file = {
 
 new_type ('object', 'Objects', false, 'Fields')
 
+-- The typecheck declaration of each function, as it is called.
+custom_tags = {
+  {'signature', title = 'Signature', hidden = false},
+}
+
 format = 'markdown'
 backtick_references = false
 sort = false
