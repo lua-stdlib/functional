@@ -65,11 +65,12 @@
   - New `each` calls a function with every item, for its effects, and
     `iter` makes an iterator function from a generic `for` triple.
 
-  - New `reject`, `partition`, `detect`, `dropuntil`, `contains` and
-    `some` work with predicates, that can be plain values to compare
-    with, such as `contains(t, nil)` to ask whether `t` has a hole.
-    `dropuntil` returns every result of the first call of its function
-    that passes, where `detect` returns only the first.
+  - New `reject`, `partition`, `detect`, `contains` and `some` work
+    with predicates, that can be plain values to compare with, such as
+    `contains(t, nil)` to ask whether `t` has a hole, and `some` and
+    `detect` pass anything truthy by default.  New `firstof` returns the
+    first result of calling its function with an item that passes,
+    without calling it for later items.
 
   - New `mapvalues` maps the values of a table, keeping its keys and
     storing `false` results, and `tabulate` makes a table from the keys

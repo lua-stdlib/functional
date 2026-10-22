@@ -71,11 +71,6 @@ local function walk(seq, visit)
 end
 
 
-local function isnonnil(x)
-   return x ~= nil
-end
-
-
 local function topredicate(x)
    if type(x) == 'function' then
       return x
@@ -370,31 +365,27 @@ local function each(seq, fn)
 end
 
 
-local function dropuntil(seq, pred, fn)
+local function firstof(seq, pred, fn)
    if fn == nil then
-      pred, fn = isnonnil, pred
+      pred, fn = id, pred
    end
    pred = topredicate(pred)
    local found
    local function test(...)
       if pred(...) then
-         found = pack(...)
+         found = ...
          return true
       end
    end
    walk(seq, function(...)
       return test(fn(...))
    end)
-   if found then
-      return unpack(found, 1, found.n)
-   end
+   return found
 end
 
 
-local function detect(seq, pred, fn)
-   pred = default(pred, id)
-   fn = default(fn, id)
-   return (dropuntil(seq, pred, fn))
+local function detect(seq, ...)
+   return firstof(seq, given(id, ...), id)
 end
 
 
@@ -772,55 +763,27 @@ return {
    default = X('default(?any, [?any])', default),
 
    --- Find the first item of an iterable that passes a predicate.
-   -- With *fn*, each item is mapped to the results of *fn* lazily, and
-   -- the first of the first results that pass is returned, so *fn* is
-   -- not called for items after it, as with @{dropuntil}, but with only
-   -- the first of the passing call's results.  The predicate is called
-   -- with all the results of an iteration.  If *pred* is omitted or nil,
-   -- it passes anything truthy, as in @{some}, where @{dropuntil} passes
-   -- anything that is not nil: use `detect(seq, false)` to find `false`.
+   -- The predicate is called with all the results of an iteration.  If
+   -- *pred* is omitted, it passes anything truthy, as in @{some}:
+   -- use `detect(seq, false)` to find `false`.
+   -- An explicit `nil`, unlike leaving *pred* out, is compared with the
+   -- items, as for @{contains}.
    -- @function detect
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param[opt] pred a predicate function, or a value to compare with
-   -- @func[opt] fn map function
-   -- @return the first item, or result of *fn*, that passes, or `nil`
-   --    if there isn't one
-   -- @see dropuntil
+   -- @return the first item that passes, or `nil` if there isn't one
    -- @see filter
+   -- @see firstof
    -- @see predicate
    -- @usage
    --   --> 'b'
    --   detect({'a', 'b', 'c'}, function(e) return e > 'a' end)
-   --   --> 4, without calling `parse` for items after 4
-   --   detect(args, nil, parse)
-   detect = X('detect(table|function, [?any], [callable])', detect),
-
-   --- Call a function with each item of an iterable, until a result passes.
-   -- *fn* is called with all the results of an iteration, and the
-   -- predicate with all the results of that call.  The call, and so the
-   -- iteration, stops at the first call that passes, and all its results
-   -- are returned, whereas @{detect} returns only the first.  If *pred*
-   -- is omitted, it passes anything that is not nil.
-   -- An explicit `nil` for *pred*, unlike leaving it out, is compared with
-   -- the results.
-   -- @function dropuntil
-   -- @tparam table|function seq an iterable, see @{collect}
-   -- @param[opt] pred a predicate function, or a value to compare with
-   -- @func fn function to call with each item
-   -- @return all the results of the first call of *fn* that passes, or
-   --    nothing if there isn't one
-   -- @see detect
-   -- @see some
-   -- @usage
-   --   --> 'two', 2: parse is not called for items after 2
-   --   dropuntil({1, 2, 3}, function(e) if e == 2 then return 'two', e end end)
-   --   dropuntil(files, lambda '=_1 ~= "."', open)
-   dropuntil = X('dropuntil(table|function, [?any], callable)', dropuntil),
+   detect = X('detect(table|function, [?any])', detect),
 
    --- Call a function with each item of an iterable, for its effects.
    -- The function is called with all the results of an iteration, and
    -- every item is visited, whatever it returns.  Use @{some} or
-   -- @{dropuntil} to stop early.
+   -- @{firstof} to stop early.
    -- @function each
    -- @tparam table|function seq an iterable, see @{collect}
    -- @func fn function called with each item
@@ -844,6 +807,29 @@ return {
    --   --> {2, 4, n=2}
    --   filter({1, 2, 3, 4}, function(e) return e % 2 == 0 end)
    filter = X('filter(table|function, ?any)', filter),
+
+   --- The first result of calling a function with each item that passes.
+   -- *fn* is called with all the results of an iteration, and the
+   -- predicate with all the results of that call.  The call, and so the
+   -- iteration, stops at the first call that passes, and its first result
+   -- is returned, so *fn* is not called for items after it.  If *pred* is
+   -- omitted, it passes anything truthy.
+   -- An explicit `nil` for *pred*, unlike leaving it out, is compared with
+   -- the results.
+   -- @function firstof
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param[opt] pred a predicate function, or a value to compare with
+   -- @func fn function to call with each item
+   -- @return the first result of the first call of *fn* that passes, or
+   --    `nil` if there isn't one
+   -- @see detect
+   -- @see some
+   -- @usage
+   --   --> 'two': parse is not called for items after 2
+   --   firstof({1, 2, 3}, function(e) if e == 2 then return 'two' end end)
+   --   --> the first file that opens
+   --   firstof(paths, io.open)
+   firstof = X('firstof(table|function, [?any], callable)', firstof),
 
    --- Flatten a nested table into a list.
    -- @function flatten
