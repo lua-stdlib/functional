@@ -6,7 +6,7 @@ before:
    global_table = '_G'
 
    exported_apis = {
-      'any', 'bind', 'callable', 'case', 'collect', 'compose', 'cond',
+      'any', 'bind', 'callable', 'case', 'choose', 'collect', 'compose', 'cond',
       'contains', 'converge', 'curry', 'default', 'detect', 'each', 'either', 'except',
       'filter', 'firstof', 'flatmap', 'flatten', 'foldl', 'foldr',
       'id', 'indexof', 'invert', 'isempty', 'iter', 'lambda',
@@ -260,6 +260,37 @@ specify functional:
   - it composes functions in the correct order:
       expect(f(math.sin, math.cos)(1)).
          to_be(math.cos(math.sin(1)))
+
+
+- describe choose:
+  - before:
+      f = M.choose
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.choose(?any, ?any, <?any>)', f)
+
+  - it chooses the consequent for a truthy test:
+      expect(f(true, 'yes', 'no')).to_be 'yes'
+      expect(f(0, 'yes', 'no')).to_be 'yes'
+  - it chooses the alternative for a falsey test:
+      expect(f(false, 'yes', 'no')).to_be 'no'
+      expect(f(nil, 'yes', 'no')).to_be 'no'
+  - it can choose false or nil:
+      expect(f(true, false, 'no')).to_be(false)
+      expect(f(false, 'yes', false)).to_be(false)
+      expect(f(false, 'yes', nil)).to_be(nil)
+  - it returns nil for a missing alternative:
+      expect(f(false, 'yes')).to_be(nil)
+  - it calls a function leg with the test, if it is chosen:
+      expect(f('t', function(test) return test .. '!' end, 'no')).to_be 't!'
+      expect(f(false, 'yes', function(test) return tostring(test) end)).to_be 'false'
+  - it calls a functable leg:
+      expect(f(true, M.lambda '|x| tostring(x)', 'no')).to_be 'true'
+  - it does not call the leg that is not chosen:
+      called = false
+      f(true, 'yes', function() called = true end)
+      f(false, function() called = true end, 'no')
+      expect(called).to_be(false)
 
 
 - describe cond:

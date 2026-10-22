@@ -258,6 +258,15 @@ local function compose(...)
 end
 
 
+local function choose(test, consequent, alternative)
+   local leg = alternative
+   if test then
+      leg = consequent
+   end
+   return call(leg, test)
+end
+
+
 local function cond(...)
    local clauses = pack(...)
    for i = 1, clauses.n do
@@ -292,7 +301,7 @@ local function keeper(passes)
       pred = topredicate(pred)
       local r, n = {}, 0
       walk(seq, function(...)
-         if not pred(...) == not passes then
+         if choose(pred(...), passes, not passes) then
             n = n + 1
             r[n] = (...)
          end
@@ -1456,6 +1465,28 @@ return {
    --      default = function(s) files[#files + 1] = s end,
    --   })
    case = X('case(?any, table)', case),
+
+   --- Select one of two values by a test.
+   -- Like `test and consequent or alternative`, except that either can
+   -- be `false` or `nil`.  A function or functable leg is called with
+   -- *test*, and its result returned, but only if it is the one chosen,
+   -- so pass anything with a side effect, or that is expensive or unsafe
+   -- to compute, as a function.  To return a function itself, wrap it in
+   -- one.
+   -- @function choose
+   -- @signature choose(?any, ?any, <?any>)
+   -- @param test a value, 'truthy' or 'falsey'
+   -- @param consequent chosen if *test* is truthy
+   -- @param[opt] alternative chosen if it is not
+   -- @return *consequent* or *alternative*, or the result of calling it
+   -- @see cond
+   -- @usage
+   --   --> 'yes'
+   --   choose(1 < 2, 'yes', 'no')
+   --
+   --   --> nothing is read unless the file is wanted
+   --   choose(wanted, function() return io.open(path):read('a') end)
+   choose = X('choose(?any, ?any, <?any>)', choose),
 
    --- A rudimentary condition-case statement.
    -- Each clause is a `{test, branch}` pair, and the first clause whose

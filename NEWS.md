@@ -101,6 +101,10 @@
   - New `predicate` makes a predicate from a value, a function or a
     functable.
 
+  - New `choose` selects one of two values by a test, like `test and
+    consequent or alternative` except that either can be `false` or
+    `nil`, and calls a function that it chooses.
+
   - `case` matches strings against patterns.
 
   - New `default` returns its first argument unless it is nil, for an
