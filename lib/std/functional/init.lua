@@ -23,19 +23,6 @@ local _ENV = require 'std.normalize' {
 }
 
 
-local function ielems(t)
-   -- capture ipairs iterator initial state
-   local fn, istate, ctrl = ipairs(t)
-   return function(state, _)
-      local v
-      ctrl, v = fn(state, ctrl)
-      if ctrl then
-         return v
-      end
-   end, istate, true -- wrapped initial state
-end
-
-
 --[[ =============== ]]--
 --[[ Implementation. ]]--
 --[[ =============== ]]--
@@ -496,9 +483,9 @@ end
 
 local function _product(x, l)
    local r = {}
-   for v1 in ielems(x) do
-      for v2 in ielems(l) do
-         r[#r + 1] = {v1, unpack(v2, 1, len(v2))}
+   for i = 1, len(x) do
+      for j = 1, len(l) do
+         r[#r + 1] = {x[i], unpack(l[j], 1, len(l[j]))}
       end
    end
    r.n = #r
@@ -524,7 +511,8 @@ local function shape(t, dims)
    -- Check the shape and calculate the size of the zero, if any
    local size = 1
    local zero
-   for i, v in ipairs(dims) do
+   for i = 1, len(dims) do
+      local v = dims[i]
       if v == 0 then
          if zero then -- bad shape: two zeros
             return nil
@@ -574,8 +562,8 @@ end
 
 local function zip(tt)
    local r = {}
-   for outerk, inner in pairs(tt) do
-      for k, v in pairs(inner) do
+   for outerk, inner in next, tt do
+      for k, v in next, inner do
          r[k] = r[k] or {}
          r[k][outerk] = v
       end

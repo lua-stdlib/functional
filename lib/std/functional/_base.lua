@@ -84,7 +84,9 @@ local function serialize(x, roots)
       roots[x] = toqstring(x) -- recursion protection
 
       local kp -- previous key
-      for _, k in ipairs(sortedkeys(x, keycmp)) do
+      local ks = sortedkeys(x, keycmp)
+      for i = 1, #ks do
+         local k = ks[i]
          if kp ~= nil then
             buf[#buf + 1] = ','
          end
