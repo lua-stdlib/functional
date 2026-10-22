@@ -20,6 +20,12 @@
     argument, like the `..` operator, instead of always concatenating
     the stringified arguments.
 
+  - Every function that takes a function argument accepts a functable
+    too, when typecheck is installed: `any`, `bind`, `collect`,
+    `compose`, `curry`, `filter`, `foldl`, `foldr`, `map`, `map_with`,
+    `memoize`, `reduce` and `zip_with` no longer reject the functables
+    that `lambda` and `memoize` return.
+
 
 ## Noteworthy changes in release 1.0 (2026-07-26) [stable]
 

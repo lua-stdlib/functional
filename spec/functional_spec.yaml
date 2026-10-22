@@ -104,7 +104,9 @@ specify functional:
       f = M.any
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.any(func...)', f)
+      badargs.diagnose('std.functional.any(callable...)', f)
+  - it accepts lambdas:
+      expect(f(M.lambda '=nil', M.lambda '=_1')(5)).to_be(5)
 
   - it returns a single function:
       expect(type(f(M.id))).to_be 'function'
@@ -129,7 +131,9 @@ specify functional:
       f = M.bind
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.bind(func, table)', f)
+      badargs.diagnose('std.functional.bind(callable, table)', f)
+  - it accepts a lambda:
+      expect(f(M.lambda '=_1 - _2', {10})(3)).to_be(7)
 
   - it does not affect normal operation if no arguments are bound:
       expect(f(math.min, {})(2, 3, 4)).to_be(2)
@@ -209,6 +213,10 @@ specify functional:
   - it evaluates returned functables:
       functable = setmetatable({}, {__call = function(t, with) return with end})
       expect(f('functable', {functable})).to_be 'functable'
+  - it evaluates lambda matches:
+      branches = {x=M.lambda '=_1 .. "!"', M.lambda '=_1 .. "?"'}
+      expect(f('x', branches)).to_be 'x!'
+      expect(f('y', branches)).to_be 'y?'
   - it evaluates 'with' exactly once:
       s = 'prince'
       function acc() s = s .. 's'; return s end
@@ -225,7 +233,9 @@ specify functional:
       f = M.collect
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.collect([func], ?any...)', f)
+      badargs.diagnose('std.functional.collect([callable], ?any...)', f)
+  - it accepts a lambda iterator:
+      expect(f(M.lambda '=ipairs(_1)', {'a', 'b'})).to_equal {'a', 'b'}
 
   - it collects a list of single return value iterator results:
       expect(f(ielems, {'a', 'b', 'c'})).to_equal {'a', 'b', 'c'}
@@ -247,7 +257,9 @@ specify functional:
       f = M.compose
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.compose(func...)', f)
+      badargs.diagnose('std.functional.compose(callable...)', f)
+  - it accepts lambdas:
+      expect(f(M.lambda '=_1 + 1', M.lambda '=_1 * 2')(3)).to_be(8)
 
   - it composes a single function correctly:
       expect(f(M.id)(1)).to_be(1)
@@ -287,6 +299,9 @@ specify functional:
   - it recurses with remaining arguments if first argument is falsey:
       expect(f(nil, true, 42, M.id)).to_be(42)
       expect(f(nil, true, false, false, 42, M.id)).to_be(42)
+  - it evaluates lambda branches:
+      expect(f(M.lambda '=true')).to_be(true)
+      expect(f('truthy', M.lambda '=_1 .. "!"')).to_be 'truthy!'
 
 
 - describe curry:
@@ -296,7 +311,9 @@ specify functional:
       f = M.curry
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.curry(func, int)', f)
+      badargs.diagnose('std.functional.curry(callable, int)', f)
+  - it accepts a lambda:
+      expect(f(M.lambda '=_1 - _2', 2)(10)(3)).to_be(7)
 
   - it returns a zero argument function uncurried:
       expect(f(f, 0)).to_be(f)
@@ -320,7 +337,10 @@ specify functional:
       f = M.filter
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.filter(func, [func], ?any...)', f)
+      badargs.diagnose('std.functional.filter(callable, [callable], ?any...)', f)
+  - it accepts a lambda predicate and iterator:
+      expect(f(M.lambda '=_2:match "[aeiou]"', M.lambda '=ipairs(_1)', elements)).
+         to_equal {[1]='a', [5]='e'}
 
   - it works with an empty table:
       expect(f(M.id, pairs, {})).to_equal {}
@@ -374,7 +394,9 @@ specify functional:
       f = M.foldl
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.foldl(function, [any], table)', f)
+      badargs.diagnose('std.functional.foldl(callable, [any], table)', f)
+  - it accepts a lambda:
+      expect(f(M.lambda '=_1 + _2', 10000, {1, 10, 100})).to_be(10111)
 
   - it works with an empty table:
       expect(f(op.sum, 10000, {})).to_be(10000)
@@ -392,7 +414,10 @@ specify functional:
       f = M.foldr
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.foldr(function, [any], table)', f)
+      badargs.diagnose('std.functional.foldr(callable, [any], table)', f)
+  - it accepts a lambda:
+      expect(f(M.lambda '=_1 / _2', 10, {10000, 100})).
+         to_be(10000 / (100 / 10))
 
   - it works with an empty table:
       expect(f(op.sum, 1, {})).to_be(1)
@@ -509,7 +534,10 @@ specify functional:
       f = M.map
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.map(func, [func], ?any...)', f)
+      badargs.diagnose('std.functional.map(callable, [callable], ?any...)', f)
+  - it accepts a lambda map function and iterator:
+      expect(f(M.lambda '=_2 .. "x"', M.lambda '=ipairs(_1)', {'a', 'b'})).
+         to_equal {'ax', 'bx'}
 
   - it works with an empty table:
       expect(f(M.id, ipairs, {})).to_equal {}
@@ -563,7 +591,9 @@ specify functional:
       f = M.map_with
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.map_with(function, table of tables)', f)
+      badargs.diagnose('std.functional.map_with(callable, table of tables)', f)
+  - it accepts a lambda:
+      expect(f(M.lambda '=_1 + _2', {{1, 2, 3}, {4, 5}})).to_equal {3, 9}
 
   - it works for an empty table:
       expect(f(fn, {})).to_equal({})
@@ -595,7 +625,9 @@ specify functional:
       end)
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.memoize(func, [?func])', f)
+      badargs.diagnose('std.functional.memoize(callable, [?callable])', f)
+  - it accepts a lambda function and mnemonic:
+      expect(f(M.lambda '=_1 * 2', M.lambda '=tostring(_1)')(4)).to_be(8)
 
   - it propagates multiple return values:
       expect((memfn())).to_be(nil)
@@ -691,7 +723,10 @@ specify functional:
       f = M.reduce
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.reduce(func, any, [func], ?any...)', f)
+      badargs.diagnose('std.functional.reduce(callable, any, [callable], ?any...)', f)
+  - it accepts a lambda accumulator and iterator:
+      expect(f(M.lambda '=_1 + _3', 2, M.lambda '=ipairs(_1)', {3, 4})).
+         to_be(2 + 3 + 4)
 
   - it works with an empty table:
       expect(f(op.sum, 2, ipairs, {})).to_be(2)
@@ -774,7 +809,9 @@ specify functional:
       f = M.zip_with
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.zip_with(function, table of tables)', f)
+      badargs.diagnose('std.functional.zip_with(callable, table of tables)', f)
+  - it accepts a lambda:
+      expect(f(M.lambda '=_1 + _2', {{1, 2}, {3, 4}})).to_equal {4, 6}
 
   - it works for an empty table:
       expect(f(fn, {})).to_equal {}

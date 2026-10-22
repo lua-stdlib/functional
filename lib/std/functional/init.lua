@@ -534,7 +534,7 @@ return {
    -- @treturn function to call fn1 .. fnN until one returns non-nil.
    -- @usage
    --   old_object_type = any(std.object.type, io.type, type)
-   any = X('any(func...)', any),
+   any = X('any(callable...)', any),
 
    --- Partially apply a function.
    -- @function bind
@@ -543,7 +543,7 @@ return {
    -- @return function with *argt* arguments already bound
    -- @usage
    --   cube = bind(std.functional.operator.pow, {[2] = 3})
-   bind = X('bind(func, table)', bind),
+   bind = X('bind(callable, table)', bind),
 
    --- Identify callable types.
    -- @function callable
@@ -583,7 +583,7 @@ return {
    -- @usage
    --   --> {'a', 'b', 'c'}
    --   collect {'a', 'b', 'c', x=1, y=2, z=5}
-   collect = X('collect([func], ?any...)', collect),
+   collect = X('collect([callable], ?any...)', collect),
 
    --- Compose functions.
    -- @function compose
@@ -598,7 +598,7 @@ return {
    -- @usage
    --   vpairs = compose(table.invert, ipairs)
    --   for v, i in vpairs {'a', 'b', 'c'} do process(v, i) end
-   compose = X('compose(func...)', compose),
+   compose = X('compose(callable...)', compose),
 
    --- A rudimentary condition-case statement.
    -- If *expr* is 'truthy' return *branch* if given, otherwise *expr*
@@ -630,7 +630,7 @@ return {
    -- @usage
    --   add = curry(function(x, y) return x + y end, 2)
    --   incr, decr = add(1), add(-1)
-   curry = X('curry(func, int)', curry),
+   curry = X('curry(callable, int)', curry),
 
    --- Filter an iterator with a predicate.
    -- @function filter
@@ -643,7 +643,7 @@ return {
    -- @usage
    --   --> {2, 4}
    --   filter(lambda '|e|e%2==0', std.elems, {1, 2, 3, 4})
-   filter = X('filter(func, [func], ?any...)', filter),
+   filter = X('filter(callable, [callable], ?any...)', filter),
 
    --- Flatten a nested table into a list.
    -- @function flatten
@@ -666,7 +666,7 @@ return {
    -- @see reduce
    -- @usage
    --   foldl(operator.quot, {10000, 100, 10}) == (10000 / 100) / 10
-   foldl = X('foldl(function, [any], table)', foldl),
+   foldl = X('foldl(callable, [any], table)', foldl),
 
    --- Fold a binary function right associatively.
    -- If parameter *d* is omitted, the last element of *t* is used,
@@ -680,7 +680,7 @@ return {
    -- @see reduce
    -- @usage
    --   foldr(operator.quot, {10000, 100, 10}) == 10000 / (100 / 10)
-   foldr = X('foldr(function, [any], table)', foldr),
+   foldr = X('foldr(callable, [any], table)', foldr),
 
    --- Identity function.
    -- @function id
@@ -740,7 +740,7 @@ return {
    -- @usage
    --   --> {1, 4, 9, 16}
    --   map(lambda '=_1*_1', std.ielems, {1, 2, 3, 4})
-   map = X('map(func, [func], ?any...)', map),
+   map = X('map(callable, [callable], ?any...)', map),
 
    --- Map a function over a table of argument lists.
    -- @function map_with
@@ -753,7 +753,7 @@ return {
    --   --> {'123', '45'}, {a='123', b='45'}
    --   conc = bind(map_with, {lambda '|...|table.concat {...}'})
    --   conc {{1, 2, 3}, {4, 5}}, conc {a={1, 2, 3, x='y'}, b={4, 5, z=6}}
-   map_with = X('map_with(function, table of tables)', map_with),
+   map_with = X('map_with(callable, table of tables)', map_with),
 
    --- Memoize a function, by wrapping it in a functable.
    --
@@ -767,7 +767,7 @@ return {
    -- @treturn functable memoized function
    -- @usage
    --   local fast = memoize(function(...) --[[ slow code ]] end)
-   memoize = X('memoize(func, [?func])', memoize),
+   memoize = X('memoize(callable, [?callable])', memoize),
 
    --- No operation.
    -- This function ignores all arguments, and returns no values.
@@ -801,7 +801,7 @@ return {
    -- @usage
    --   --> 2 ^ 3 ^ 4 ==> 4096
    --   reduce(operator.pow, 2, std.ielems, {3, 4})
-   reduce = X('reduce(func, any, [func], ?any...)', reduce),
+   reduce = X('reduce(callable, any, [callable], ?any...)', reduce),
 
    --- Shape a table according to a list of dimensions.
    --
@@ -856,7 +856,7 @@ return {
    --   --> {'135', '24'}, {a='1', b='25'}
    --   conc = bind(zip_with, {lambda '|...|table.concat {...}'})
    --   conc {{1, 2}, {3, 4}, {5}}, conc {{a=1, b=2}, x={a=3, b=4}, {b=5}}
-   zip_with = X('zip_with(function, table of tables)', zip_with),
+   zip_with = X('zip_with(callable, table of tables)', zip_with),
 }
 
 
