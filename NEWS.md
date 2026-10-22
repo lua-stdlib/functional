@@ -11,6 +11,10 @@
     luarocks install https://raw.githubusercontent.com/lua-stdlib/functional/master/std.functional-dev-1.rockspec
     ```
 
+  - New `predicate` makes a predicate from a value, a function or a
+    functable, and `iter` makes an iterator function from a generic `for`
+    triple.
+
 ### Bug fixes
 
   - `map` passes every result of every iteration to its function, even

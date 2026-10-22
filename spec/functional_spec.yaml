@@ -7,8 +7,9 @@ before:
 
    exported_apis = {
       'any', 'bind', 'callable', 'case', 'collect', 'compose', 'cond',
-      'curry', 'filter', 'flatten', 'foldl', 'foldr', 'id', 'ireverse',
-      'lambda', 'map', 'map_with', 'memoize', 'nop', 'product', 'reduce',
+      'curry', 'filter', 'flatten', 'foldl', 'foldr', 'id', 'iter',
+      'ireverse', 'lambda', 'map', 'map_with', 'memoize', 'nop', 'predicate',
+      'product', 'reduce',
       'shape', 'zip', 'zip_with',
    }
 
@@ -524,6 +525,44 @@ specify functional:
     - it can be stringified:
         exp = '_%2==0'
         expect(tostring(f(exp))).to_be(exp)
+  - it is tagged like a std.prototype object:
+      expect(getmetatable(f '_')._type).to_be 'Lambda'
+
+
+- describe iter:
+  - before:
+      f = M.iter
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.iter(callable, [?any...])', f)
+
+  - it returns an iterator function:
+      expect(type(f(pairs {}))).to_be 'function'
+  - it needs no state or control variable:
+      next_word = f(('a b'):gmatch '%a')
+      expect(next_word()).to_be 'a'
+  - it keeps holes in the results of an iteration:
+      next_item = f(function(_, c) if not c then return 1, nil, 3 end end)
+      expect(pack(next_item())).to_equal {n=3, 1, [3]=3}
+  - it passes on all the results of each iteration:
+      next_pair = f(pairs {a=1})
+      expect({next_pair()}).to_equal {'a', 1}
+      expect(next_pair()).to_be(nil)
+  - it carries the control variable from call to call:
+      next_item = f(ipairs {'x', 'y'})
+      expect({next_item()}).to_equal {1, 'x'}
+      expect({next_item()}).to_equal {2, 'y'}
+      expect(next_item()).to_be(nil)
+  - it starts from a given control variable:
+      t = {'x', 'y', 'z'}
+      fn = ipairs(t)
+      next_item = f(fn, t, 1)
+      expect({next_item()}).to_equal {2, 'y'}
+  - it ignores extra values after the triple:
+      t = {'x'}
+      fn = ipairs(t)
+      next_item = f(fn, t, 0, 'ignored')
+      expect({next_item()}).to_equal {1, 'x'}
 
 
 - describe map:
@@ -689,6 +728,42 @@ specify functional:
       expect(f(1, 2, 3, nil, 'str', {}, f)).to_be(nil)
   - it returns no values:
       expect(f(1, 'two', false)).to_be(nil)
+
+
+- describe predicate:
+  - before:
+      f = M.predicate
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.predicate(?any)', f)
+
+  - it returns a plain function as is:
+      expect(f(M.id)).to_be(M.id)
+  - it unwraps a lambda to the plain function inside it:
+      l = M.lambda '|e| e % 2 == 0'
+      fn = f(l)
+      expect(type(fn)).to_be 'function'
+      expect(fn(4)).to_be(true)
+      expect(fn(5)).to_be(false)
+      expect(f(l)).to_be(fn)
+  - it wraps any other functable in a plain function that calls it:
+      functable = setmetatable({}, {__call = function(_, ...) return ... end})
+      fn = f(functable)
+      expect(type(fn)).to_be 'function'
+      expect({fn(1, nil, 3)}).to_equal {1, nil, 3}
+  - it makes a test for equality with any other value:
+      for _, v in ipairs {true, false, 42, 'str', {}} do
+         expect(f(v)(v)).to_be(true)
+         expect(f(v)(0 == v and 1 or 0)).to_be(false)
+      end
+  - it tests for nil without arguments:
+      expect(f(nil)(nil)).to_be(true)
+      expect(f(nil)(false)).to_be(false)
+  - it does not look inside tables:
+      expect(f({1})({1})).to_be(false)
+  - it honours __eq:
+      mt = {__eq = function() return true end}
+      expect(f(setmetatable({}, mt))(setmetatable({}, mt))).to_be(true)
 
 
 - describe product:

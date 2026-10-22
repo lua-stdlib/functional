@@ -330,6 +330,18 @@ local function id(...)
 end
 
 
+local function iter(f, s, c)
+   -- Take the control variable from the first result, and pass them all on.
+   local function step(...)
+      c = ...
+      return ...
+   end
+   return function()
+      return step(f(s, c))
+   end
+end
+
+
 local function multiserialize(...)
    local seq = pack(...)
    local buf = {}
@@ -391,6 +403,8 @@ local lambda = memoize(function(s)
    end
 
    return setmetatable({}, {
+      _type = 'Lambda',   -- as std.prototype tags its objects
+      _fn = fn,           -- for predicate to unwrap
       __call = function(self, ...) return fn(...) end,
       __tostring = function(self) return s end,
    })
@@ -437,6 +451,24 @@ local function map_with(mapfn, tt)
       r[k] = mapfn(unpack(v, 1, len(v)))
    end
    return r
+end
+
+
+local function predicate(x)
+   if type(x) == 'function' then
+      return x
+   end
+   local mt = getmetatable(x)
+   if type(mt) == 'table' and mt._type == 'Lambda' then
+      return mt._fn
+   elseif callable(x) then
+      return function(...)
+         return x(...)
+      end
+   end
+   return function(y)
+      return y == x
+   end
 end
 
 
@@ -688,6 +720,21 @@ return {
    -- @return *arguments*
    id = id,   -- any number of any type arguments!
 
+   --- Make an iterator function from a generic-for triple.
+   -- Each call passes on all of the results of the next iteration, and
+   -- they are nil once the iterator is exhausted.  Use it to pass a
+   -- stateless iterator, such as `pairs(t)`, where an iterator function
+   -- is wanted.
+   -- @function iter
+   -- @func f iterator function, as in a generic `for`
+   -- @param[opt] s invariant state, passed to *f* on every call
+   -- @param[opt] c initial control variable
+   -- @treturn function an iterator function with *s* and *c* closed over
+   -- @usage
+   --   --> {'a', 1}, {'b', 2}
+   --   local next_pair = iter(pairs {a=1, b=2})
+   iter = X('iter(callable, [?any...])', iter),
+
    --- Return a new sequence with element order reversed.
    --
    -- Apart from the order of the elements returned, this function follows
@@ -789,6 +836,30 @@ return {
    --   map(table.concat, ielems, product({0,1}, {0, 1}, {0, 1}))
    product = X('product(list...)', product),
 
+   --- Make a predicate from a value, a function or a functable.
+   -- A plain function is returned as is, and a @{lambda} is unwrapped to
+   -- the function inside it, so that its source string can no longer be
+   -- recovered.  Any other callable is wrapped in a plain function that
+   -- calls it, since it may use its own table when it is called.
+   -- Anything else becomes a test for equality (as `==`, so honouring
+   -- `__eq`) with it, including `nil`.
+   --
+   -- Functions that take a predicate, or a value to test for, treat a
+   -- plain function as the predicate and everything else, a functable
+   -- included, as a value, because functables in a sequence are usually
+   -- data: a std.prototype object, for example, is callable.  Pass
+   -- `predicate(functable)` to use a functable as the predicate instead,
+   -- and to search for a function value, use `bind(operator.eq, {f})`.
+   -- For deep equality use `bind(operator.eqv, {x})`.
+   -- @function predicate
+   -- @param x a value, a function that tests a value, or a functable
+   -- @treturn function a predicate for *x*
+   -- @usage
+   --   is_five = predicate(5)
+   --   is_five(5), is_five(6) --> true, false
+   --   is_even = predicate(lambda '|e| e % 2 == 0')
+   predicate = X('predicate(?any)', predicate),
+
    --- Fold a binary function into an iterator.
    -- @function reduce
    -- @func fn reduce function
@@ -871,13 +942,3 @@ return {
 -- @usage
 --   local mnemonic = function(name, value, props) return name end
 --   local intern = memoize(mksymbol, mnemonic)
-
-
---- Signature of a @{filter} predicate callback function.
--- @function predicate
--- @param ... arguments
--- @treturn boolean 'truthy' if the predicate condition succeeds,
---    'falsey' otherwise
--- @usage
---   local predicate = lambda '|k,v|type(v)=="string"'
---   local strvalues = filter(predicate, std.pairs, {name='Roberto', id=12345})
