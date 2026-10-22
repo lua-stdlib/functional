@@ -4,17 +4,54 @@
 
 ### Incompatible changes
 
-  - `collect`, `filter`, `foldl`, `foldr`, `map`, `map_with`, `shape` and
-    `zip_with` take their data first and their function last, and what
-    they iterate is a table or an iterator function, rather than
-    `(fn, ifn, ...)`.  `reduce` is replaced by `foldl`, which also takes
-    iterators, and `foldl` and `foldr` default their accumulator to `{}`.
-    `collect`, `filter`, `map`, `flatten` and `product` return lists,
-    with their length in field `n`.
+  - std.functional 2 is a new design, after `luke.functional`.  Load it
+    with `require 'std.functional.init'`: when lua-stdlib 42 is
+    installed, `require 'std.functional'` keeps loading the 41.x API of
+    that name, and only gives you this one when lua-stdlib is not
+    installed.
 
-  - `case` takes its default from `branches.default`, in place of
-    `branches[1]`, and `cond` takes `{test, branch}` clauses in place of
-    alternating arguments.
+  - Functions that iterate take their data first and their function
+    last, as `table.sort` and `string.gsub` do.  The data is an
+    _iterable_: a table, whose items are its values from 1 to its `n`
+    field or length, so `table.pack` keeps holes, or an iterator
+    function, whose items end with its first nil result, such as
+    `s:gmatch(pat)`.  There are no more `(fn, ifn, ...)` iterator
+    arguments: pass a stateless iterator, such as `pairs(t)`, through
+    the new `iter(pairs(t))`.  The function is called with all the
+    results of an iteration.
+
+  - `map`, `filter`, `collect`, `flatten` and `product` return lists,
+    with their length in field `n`, so holes survive.  They no longer
+    guess the shape of their result from how many values a function
+    returns: use `tabulate` for a table of key and value results.
+
+  - Only a plain function is a predicate.  Anything else, a functable
+    such as a `lambda` included, is a value to compare each item with,
+    as `==`, because functables in a sequence are usually data.  Use
+    `predicate(lambda '|e| e % 2 == 0')` to call a functable.
+
+  - `foldl` and `foldr` default their accumulator to `{}`, where 41.x
+    used the first or last item, and keep it when the function returns
+    nil.  `reduce` is replaced by `foldl`, which also takes iterators.
+
+  - `case` takes the default from `branches.default`, no longer from
+    `branches[1]`, and looks strings up in the `{pattern, branch}` pairs
+    in its array part, in order, after the exact key.  `cond` takes
+    `{test, branch}` pairs, rather than alternating arguments, so that a
+    test can be nil.
+
+    | 41.x `std.functional`                        | 2.0 `std.functional.init`            |
+    | -------------------------------------------- | ------------------------------------ |
+    | `map(fn, ipairs, t)`                         | `map(t, fn)`                         |
+    | `map(fn, pairs, t)` with `fn` returning `k, v` | `tabulate(iter(pairs(t)), fn)`     |
+    | `filter(pfn, ifn, ...)`                      | `filter(iterable, pred)`             |
+    | `reduce(fn, d, ifn, ...)`                    | `foldl(iterable, d, fn)`             |
+    | `foldl(fn, [d], t)`, `foldr(fn, [d], t)`     | `foldl(t, [d], fn)`, `foldr(t, [d], fn)` |
+    | `collect(ifn, ...)`                          | `collect(iterable)`                  |
+    | `case(with, {..., [1] = default})`           | `case(with, {..., default = default})` |
+    | `cond(expr, branch, ...)`                    | `cond({expr, branch}, ...)`          |
+    | `map_with(fn, tt)`, `zip_with(fn, tt)`       | `map_with(tt, fn)`, `zip_with(tt, fn)` |
+    | `shape(dims, t)`                             | `shape(t, dims)`                     |
 
 ### New features
 
@@ -25,24 +62,26 @@
     luarocks install https://raw.githubusercontent.com/lua-stdlib/functional/master/std.functional-dev-1.rockspec
     ```
 
+  - New `each` calls a function with every item, for its effects, and
+    `iter` makes an iterator function from a generic `for` triple.
+
+  - New `reject`, `partition`, `detect`, `dropuntil`, `contains` and
+    `some` work with predicates, that can be plain values to compare
+    with, such as `contains(t, nil)` to ask whether `t` has a hole.
+    `dropuntil` returns every result of the first call of its function
+    that passes, where `detect` returns only the first.
+
+  - New `mapvalues` maps the values of a table, keeping its keys and
+    storing `false` results, and `tabulate` makes a table from the keys
+    and values that a function returns.
+
   - New `predicate` makes a predicate from a value, a function or a
-    functable, and `iter` makes an iterator function from a generic `for`
-    triple.
+    functable.
+
+  - `case` matches strings against patterns.
 
   - New `default` returns its first argument unless it is nil, for an
     optional argument.
-
-  - New `reject`, `partition`, `detect`, `contains` and `some` work with
-    predicates, that can be plain values to compare with, such as
-    `contains(t, nil)` to ask whether `t` has a hole.  New `mapvalues`
-    maps the values of a table, and `tabulate` makes a table from the
-    keys and values that a function returns.
-
-  - `case` matches strings against `{pattern, branch}` pairs.
-
-  - New `each` calls a function with every item, for its effects, and
-    `dropuntil` returns every result of the first call of a function
-    that passes.
 
 ### Bug fixes
 
@@ -53,11 +92,10 @@
     argument, like the `..` operator, instead of always concatenating
     the stringified arguments.
 
-  - Every function that takes a function argument accepts a functable
-    too, when typecheck is installed: `any`, `bind`, `collect`,
-    `compose`, `curry`, `filter`, `foldl`, `foldr`, `map`, `map_with`,
-    `memoize`, `reduce` and `zip_with` no longer reject the functables
-    that `lambda` and `memoize` return.
+  - Every function argument that is not a predicate accepts a functable
+    too, when typecheck is installed: `any`, `bind`, `compose`, `curry`,
+    `foldl`, `foldr`, `map`, `map_with`, `memoize` and `zip_with` no
+    longer reject the functables that `lambda` and `memoize` return.
 
 
 ## Noteworthy changes in release 1.0 (2026-07-26) [stable]

@@ -8,7 +8,26 @@
  A selection of higher-order functions to enable a functional style of
  programming in Lua.
 
- @module std.functional
+ **Load this module with `require 'std.functional.init'`.**  When
+ lua-stdlib is installed, `require 'std.functional'` loads the older,
+ incompatible 41.x API that it keeps under that name, and only gives you
+ this module when lua-stdlib is not installed.
+
+ Functions that iterate take their data first and their function last,
+ as `table.sort` and `string.gsub` do.  The data is an *iterable*: a
+ table, whose items are its values from 1 to its `n` field or length, so
+ `table.pack` keeps holes; or an iterator function, whose items end
+ with its first nil result, such as `s:gmatch(pat)`.  Use @{iter} to
+ pass a stateless iterator, such as `iter(pairs(t))`.  The function is
+ called with all the results of an iteration.  Functions that return
+ several items return lists, with their length in field `n`.
+
+ A predicate is a plain function.  Anything else that is passed where a
+ predicate is wanted, a functable such as a @{lambda} included, is a
+ value to compare each item with, as `==`.  Use @{predicate} to call a
+ functable instead.
+
+ @module std.functional.init
 ]]
 
 

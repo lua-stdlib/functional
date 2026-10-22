@@ -82,7 +82,7 @@ return {
    -- @usage
    --   -- destructive table merge:
    --   --> {'one', bar='baz', two=5}
-   --   reduce(set, {'foo', bar='baz'}, {'one', two=5})
+   --   foldl(iter(next, {'one', two=5}), {'foo', bar='baz'}, set)
    set = function(t, k, v)
       t[k]=v
       return t
@@ -180,8 +180,8 @@ return {
    -- @param a an argument
    -- @return not *a*
    -- @usage
-   --   --> {true, false, false, false}
-   --   bind(map, {std.ielems, neg}) {false, true, 1, 0}
+   --   --> {true, false, false, false, n=4}
+   --   map({false, true, 1, 0}, neg)
    neg = function(a)
       return not a
    end,
@@ -205,9 +205,9 @@ return {
    -- @param b another argument
    -- @return `false` if *a* is *b*, otherwise `true`
    -- @usage
-   --   --> true
-   --   local f = require 'std.functional'
-   --   table.empty(f.filter (f.bind(neq, {6}), std.ielems, {6, 6, 6})
+   --   --> {n=0}
+   --   local f = require 'std.functional.init'
+   --   f.filter({6, 6, 6}, f.bind(neq, {6}))
    neq = function(a, b)
       return a ~= b
    end,

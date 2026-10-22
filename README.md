@@ -13,14 +13,32 @@ This is a collection of Functional Programming libraries for Lua 5.1
 authors (see the [AUTHORS][] file for details), and released under the
 [MIT license][mit] (the same license as Lua itself). There is no warranty.
 
-_std.functional_ has no run-time prerequisites beyond a standard Lua system,
-though it will take advantage of [stdlib][], [strict][] and [typecheck][]
-if they are installed.
+_std.functional_ needs only [std.normalize][normalize] beyond a standard Lua
+system, though it will take advantage of [strict][] and [typecheck][] if they
+are installed.
+
+**Load std.functional 2 with `require 'std.functional.init'`.** When
+[lua-stdlib][stdlib] is installed, `require 'std.functional'` loads the
+older, incompatible API of lua-stdlib 41.x that it keeps under that name,
+and only gives you this library when lua-stdlib is not installed:
+
+```lua
+    local functional = require 'std.functional.init'
+    local map, filter = functional.map, functional.filter
+
+    --> {2, 4, n=2}
+    filter(map({1, 2, 3, 4}, function(e) return e * 2 end),
+       function(e) return e < 6 end)
+```
+
+See the [NEWS][] for how to migrate from lua-stdlib 41.x.
 
 [authors]: https://github.com/lua-stdlib/functional/blob/master/AUTHORS.md
 [github]: https://github.com/lua-stdlib/functional/ "Github repository"
 [lua]: https://www.lua.org "The Lua Project"
 [mit]: https://mit-license.org "MIT License"
+[news]: https://github.com/lua-stdlib/functional/blob/master/NEWS.md
+[normalize]: https://github.com/lua-stdlib/normalize "normalized Lua APIs"
 [stdlib]: https://github.com/lua-stdlib/lua-stdlib "Standard Lua Libraries"
 [strict]: https://github.com/lua-stdlib/strict "strict variables"
 [typecheck]: https://github.com/gvvaughan/typecheck "function type checks"
