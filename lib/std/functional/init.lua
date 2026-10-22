@@ -23,9 +23,6 @@ local _ENV = require 'std.normalize' {
 }
 
 
-
--- FIXME: Figure these two out:
-
 local function ielems(t)
    -- capture ipairs iterator initial state
    local fn, istate, ctrl = ipairs(t)
@@ -39,24 +36,56 @@ local function ielems(t)
 end
 
 
-local function leaves(it, tr)
+--[[ =============== ]]--
+--[[ Implementation. ]]--
+--[[ =============== ]]--
+
+
+-- Call visit with all the results of each item of an iterable, until
+-- visit returns something truthy.  A table's items are its values from 1
+-- to its `n` field or length, so holes are visited; an iterator
+-- function's items end with its first nil result.
+local function each(seq, visit)
+   if type(seq) == 'function' then
+      local function loop(...)
+         if ... ~= nil and not visit(...) then
+            return loop(seq())
+         end
+      end
+      return loop(seq())
+   end
+   for i = 1, seq.n or len(seq) do
+      if visit(seq[i]) then
+         return
+      end
+   end
+end
+
+
+local function topredicate(x)
+   if type(x) == 'function' then
+      return x
+   end
+   return function(y)
+      return y == x
+   end
+end
+
+
+-- An iterator function over the flat sequence of what *t* holds, in
+-- order: it goes into the tables among its elements, and gives what they
+-- hold instead.  It is what flatten collects.  (Unlike `ielems`, it does
+-- not stop at a table, and unlike `Tree.leaves`, it gives no paths.)
+local function flatiter(t)
    local function visit(n)
       if type(n) == 'table' then
-         for _, v in it(n) do
-            visit(v)
-         end
+         each(n, visit)
       else
          yield(n)
       end
    end
-   return wrap(visit), tr
+   return wrap(function() visit(t) end)
 end
-
-
-
---[[ =============== ]]--
---[[ Implementation. ]]--
---[[ =============== ]]--
 
 
 local function any(...)
@@ -140,39 +169,13 @@ local function case(with, branches)
 end
 
 
-local function collect(ifn, ...)
-   local r = {}
-   if not callable(ifn) then
-      -- No iterator behaves like npairs, which would collect all integer
-      -- key values from the first argument table:
-      local k, v = next(ifn)
-      repeat
-         if type(k) == 'number' then
-            r[k] = v
-         end
-         k, v = next(ifn, k)
-      until k == nil
-      return r
-   end
-
-   -- Or else result depends on how many return values from ifn?
-   local arity = 1
-   for e, v in ifn(...) do
-      if v then
-         arity, r = 2, {}
-         break
-      end
-      -- Build an arity-1 result table on first pass...
-      r[#r + 1] = e
-   end
-
-   if arity == 2 then
-      -- ...oops, it was arity-2 all along, start again!
-      for k, v in ifn(...) do
-         r[k] = v
-      end
-   end
-
+local function collect(seq)
+   local r, n = {}, 0
+   each(seq, function(item)
+      n = n + 1
+      r[n] = item
+   end)
+   r.n = n
    return r
 end
 
@@ -215,86 +218,36 @@ local function curry(fn, n)
 end
 
 
-local function filter(pfn, ifn, ...)
-   local argt, r = pack(...), {}
-   if not callable(ifn) then
-      ifn, argt = pairs, pack(ifn, ...)
-   end
-
-   local nextfn, state, k = ifn(unpack(argt, 1, argt.n))
-
-   local t = pack(nextfn(state, k))		-- table of iteration 1
-   local arity = #t				-- How many return values from ifn?
-
-   if arity == 1 then
-      local v = t[1]
-      while v ~= nil do				-- until iterator returns nil
-         if pfn(unpack(t, 1, t.n)) then	-- pass all iterator results to p
-            r[#r + 1] = v
-         end
-
-         t = pack(nextfn(state, v))		-- maintain loop invariant
-         v = t[1]
-
-         if #t > 1 then				-- unless we discover arity is not 1 after all
-            arity, r = #t, {} break
-         end
+local function filter(seq, pred)
+   pred = topredicate(pred)
+   local r, n = {}, 0
+   each(seq, function(...)
+      if pred(...) then
+         n = n + 1
+         r[n] = (...)
       end
-   end
-
-   if arity > 1 then
-      -- No need to start over here, because either:
-      --    (i) arity was never 1, and the original value of t is correct
-      --   (ii) arity used to be 1, but we only consumed nil values, so the
-      --          current t with arity > 1 is the correct next value to use
-      while t[1] ~= nil do
-         local k = t[1]
-         if pfn(unpack(t, 1, t.n)) then
-            r[k] = t[2]
-         end
-         t = pack(nextfn(state, k))
-      end
-   end
-
+   end)
+   r.n = n
    return r
 end
 
 
 local function flatten(t)
-   return collect(leaves, ipairs, t)
+   return collect(flatiter(t))
 end
 
 
-local function reduce(fn, d, ifn, ...)
-   local argt
-   if not callable(ifn) then
-      ifn, argt = pairs, pack(ifn, ...)
-   else
-      argt = pack(...)
+local function foldl(seq, acc, fn)
+   if fn == nil then
+      fn, acc = acc, {}
    end
-
-   local nextfn, state, k = ifn(unpack(argt, 1, argt.n))
-   local t = pack(nextfn(state, k))		-- table of iteration 1
-
-   local r = d					-- initialise accumulator
-   while t[1] ~= nil do				-- until iterator returns nil
-      k = t[1]
-      r = fn(r, unpack(t, 1, t.n))		-- pass all iterator results to fn
-      t = pack(nextfn(state, k))		-- maintain loop invariant
-   end
-   return r
-end
-
-
-local function foldl(fn, d, t)
-   if t == nil then
-      local tail = {}
-      for i = 2, len(d) do
-         tail[#tail + 1] = d[i]
+   each(seq, function(...)
+      local r = fn(acc, ...)
+      if r ~= nil then
+         acc = r
       end
-      d, t = d[1], tail
-   end
-   return reduce(fn, d, ielems, t)
+   end)
+   return acc
 end
 
 
@@ -313,15 +266,18 @@ local function ireverse(t)
 end
 
 
-local function foldr(fn, d, t)
-   if t == nil then
-      local u, last = {}, len(d)
-      for i = 1, last - 1 do
-         u[#u + 1] = d[i]
-      end
-      d, t = d[last], u
+local function foldr(seq, acc, fn)
+   if fn == nil then
+      fn, acc = acc, {}
    end
-   return reduce(function(x, y) return fn(y, x) end, d, ielems, ireverse(t))
+   local t = collect(seq)
+   for i = t.n, 1, -1 do
+      local r = fn(t[i], acc)
+      if r ~= nil then
+         acc = r
+      end
+   end
+   return acc
 end
 
 
@@ -411,64 +367,36 @@ local lambda = memoize(function(s)
 end, id)
 
 
-local function map(mapfn, ifn, ...)
-   local argt, r = pack(...), {}
-   if not callable(ifn) or argt.n == 0 then
-      ifn, argt = pairs, pack(ifn, ...)
-   end
-
-   local nextfn, state, k = ifn(unpack(argt, 1, argt.n))
-   local mapargs = pack(nextfn(state, k))
-
-   local arity = 1
-   while mapargs[1] ~= nil do
-      local d, v = mapfn(unpack(mapargs, 1, mapargs.n))
-      if v ~= nil then
-         arity, r = 2, {} break
-      end
-      r[#r + 1] = d
-      mapargs = pack(nextfn(state, mapargs[1]))
-   end
-
-   if arity > 1 then
-      -- No need to start over here, because either:
-      --    (i) arity was never 1, and the original value of mapargs is correct
-      --   (ii) arity used to be 1, but we only consumed nil values, so the
-      --          current mapargs with arity > 1 is the correct next value to use
-      while mapargs[1] ~=   nil do
-         local k, v = mapfn(unpack(mapargs, 1, mapargs.n))
-         r[k] = v
-         mapargs = pack(nextfn(state, mapargs[1]))
-      end
-   end
+local function map(seq, fn)
+   local r, n = {}, 0
+   each(seq, function(...)
+      n = n + 1
+      r[n] = (fn(...))
+   end)
+   r.n = n
    return r
 end
 
 
-local function map_with(mapfn, tt)
+local function map_with(tt, fn)
    local r = {}
    for k, v in next, tt do
-      r[k] = mapfn(unpack(v, 1, len(v)))
+      r[k] = fn(unpack(v, 1, len(v)))
    end
    return r
 end
 
 
 local function predicate(x)
-   if type(x) == 'function' then
-      return x
-   end
    local mt = getmetatable(x)
    if type(mt) == 'table' and mt._type == 'Lambda' then
       return mt._fn
-   elseif callable(x) then
+   elseif type(x) ~= 'function' and callable(x) then
       return function(...)
          return x(...)
       end
    end
-   return function(y)
-      return y == x
-   end
+   return topredicate(x)
 end
 
 
@@ -479,24 +407,25 @@ local function _product(x, l)
          r[#r + 1] = {v1, unpack(v2, 1, len(v2))}
       end
    end
+   r.n = #r
    return r
 end
 
 local function product(...)
    local argt = {...}
    if not next(argt) then
-      return argt
+      return {n = 0}
    else
       -- Accumulate a list of products, starting by popping the last
       -- argument and making each member a one element list.
-      local d = map(lambda '={_1}', ielems, remove(argt))
+      local d = map(remove(argt), lambda '={_1}')
       -- Right associatively fold in remaining argt members.
-      return foldr(_product, d, argt)
+      return foldr(argt, d, _product)
    end
 end
 
 
-local function shape(dims, t)
+local function shape(t, dims)
    t = flatten(t)
    -- Check the shape and calculate the size of the zero, if any
    local size = 1
@@ -544,10 +473,9 @@ local function zip(tt)
 end
 
 
-local function zip_with(fn, tt)
-   return map_with(fn, zip(tt))
+local function zip_with(tt, fn)
+   return map_with(zip(tt), fn)
 end
-
 
 
 --[[ ================= ]]--
@@ -605,17 +533,19 @@ return {
    --   })
    case = X('case(?any, #table)', case),
 
-   --- Collect the results of an iterator.
+   --- Collect the items of an iterable into a list.
+   -- An iterable is a table, whose items are its values from 1 to its `n`
+   -- field or its length, or an iterator function, whose items end with
+   -- its first nil result.  Where an iterator function returns several
+   -- values, the item is the first of them.
    -- @function collect
-   -- @func[opt=std.npairs] ifn iterator function
-   -- @param ... *ifn* arguments
-   -- @treturn table of results from running *ifn* on *args*
-   -- @see filter
-   -- @see map
+   -- @tparam table|function seq an iterable
+   -- @treturn table a list of the items, with its length in field `n`
+   -- @see iter
    -- @usage
-   --   --> {'a', 'b', 'c'}
-   --   collect {'a', 'b', 'c', x=1, y=2, z=5}
-   collect = X('collect([callable], ?any...)', collect),
+   --   --> {'a', 'b', 'c', n=3}
+   --   collect(iter(ipairs {'a', 'b', 'c'}))
+   collect = X('collect(table|function)', collect),
 
    --- Compose functions.
    -- @function compose
@@ -664,18 +594,21 @@ return {
    --   incr, decr = add(1), add(-1)
    curry = X('curry(callable, int)', curry),
 
-   --- Filter an iterator with a predicate.
+   --- Filter the items of an iterable with a predicate.
+   -- Only a plain function is a predicate; anything else, a functable
+   -- included, is a value to compare each item with, as `==`.  Use
+   -- @{predicate} to call a functable.  The predicate is called with all
+   -- the results of an iteration, and the item kept is the first of them.
    -- @function filter
-   -- @tparam predicate pfn predicate function
-   -- @func[opt=std.pairs] ifn iterator function
-   -- @param ... iterator arguments
-   -- @treturn table elements e for which `pfn(e)` is not 'falsey'.
-   -- @see collect
-   -- @see map
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param pred a predicate function, or a value to compare with
+   -- @treturn table a list of the items that pass, with its length in
+   --    field `n`
+   -- @see predicate
    -- @usage
-   --   --> {2, 4}
-   --   filter(lambda '|e|e%2==0', std.elems, {1, 2, 3, 4})
-   filter = X('filter(callable, [callable], ?any...)', filter),
+   --   --> {2, 4, n=2}
+   --   filter({1, 2, 3, 4}, function(e) return e % 2 == 0 end)
+   filter = X('filter(table|function, ?any)', filter),
 
    --- Flatten a nested table into a list.
    -- @function flatten
@@ -687,32 +620,34 @@ return {
    flatten = X('flatten(table)', flatten),
 
    --- Fold a binary function left associatively.
-   -- If parameter *d* is omitted, the first element of *t* is used,
-   -- and *t* treated as if it had been passed without that element.
+   -- Call *fn* with the accumulator and all the results of each
+   -- iteration, from the left.  If *fn* returns nil, the accumulator is
+   -- left as it was.
    -- @function foldl
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param[opt={}] acc initial accumulator
    -- @func fn binary function
-   -- @param[opt=t[1]] d initial left-most argument
-   -- @tparam table t a table
-   -- @return result
+   -- @return the final accumulator
    -- @see foldr
-   -- @see reduce
    -- @usage
-   --   foldl(operator.quot, {10000, 100, 10}) == (10000 / 100) / 10
-   foldl = X('foldl(callable, [any], table)', foldl),
+   --   foldl({10000, 100, 10}, 1000000, operator.quot) ==
+   --      ((1000000 / 10000) / 100) / 10
+   foldl = X('foldl(table|function, [any], callable)', foldl),
 
    --- Fold a binary function right associatively.
-   -- If parameter *d* is omitted, the last element of *t* is used,
-   -- and *t* treated as if it had been passed without that element.
+   -- Call *fn* with each item and the accumulator, from the right.  An
+   -- iterator function is collected into a list first, and so only its
+   -- first result of each iteration is passed on.  If *fn* returns nil,
+   -- the accumulator is left as it was.
    -- @function foldr
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param[opt={}] acc initial accumulator
    -- @func fn binary function
-   -- @param[opt=t[1]] d initial right-most argument
-   -- @tparam table t a table
-   -- @return result
+   -- @return the final accumulator
    -- @see foldl
-   -- @see reduce
    -- @usage
-   --   foldr(operator.quot, {10000, 100, 10}) == 10000 / (100 / 10)
-   foldr = X('foldr(callable, [any], table)', foldr),
+   --   foldr({10000, 100}, 10, operator.quot) == 10000 / (100 / 10)
+   foldr = X('foldr(table|function, [any], callable)', foldr),
 
    --- Identity function.
    -- @function id
@@ -745,10 +680,9 @@ return {
    --    order with respect to *t*
    -- @see ipairs
    -- @usage
-   --   local rielems = compose(ireverse, std.ielems)
    --   --> bar
    --   --> foo
-   --   map(print, rielems, {'foo', 'bar', [4]='baz', d=5})
+   --   map(ireverse {'foo', 'bar', [4]='baz', d=5}, print)
    ireverse = X('ireverse(table)', ireverse),
 
    --- Compile a lambda string into a Lua function.
@@ -775,32 +709,33 @@ return {
    --   lambda '|a,b| a<b'
    lambda = X('lambda(string)', lambda),
 
-   --- Map a function over an iterator.
+   --- Map a function over the items of an iterable.
+   -- The function is called with all the results of an iteration.
    -- @function map
+   -- @tparam table|function seq an iterable, see @{collect}
    -- @func fn map function
-   -- @func[opt=std.pairs] ifn iterator function
-   -- @param ... iterator arguments
-   -- @treturn table results
+   -- @treturn table a list of the first result of *fn* for each item,
+   --    holes kept, with its length in field `n`
    -- @see filter
    -- @see map_with
    -- @see zip
    -- @usage
-   --   --> {1, 4, 9, 16}
-   --   map(lambda '=_1*_1', std.ielems, {1, 2, 3, 4})
-   map = X('map(callable, [callable], ?any...)', map),
+   --   --> {1, 4, 9, 16, n=4}
+   --   map({1, 2, 3, 4}, lambda '=_1*_1')
+   map = X('map(table|function, callable)', map),
 
    --- Map a function over a table of argument lists.
    -- @function map_with
-   -- @func fn map function
    -- @tparam table tt a table of *fn* argument lists
+   -- @func fn map function
    -- @treturn table new table of *fn* results
    -- @see map
    -- @see zip_with
    -- @usage
    --   --> {'123', '45'}, {a='123', b='45'}
-   --   conc = bind(map_with, {lambda '|...|table.concat {...}'})
+   --   conc = bind(map_with, {[2] = lambda '|...|table.concat {...}'})
    --   conc {{1, 2, 3}, {4, 5}}, conc {a={1, 2, 3, x='y'}, b={4, 5, z=6}}
-   map_with = X('map_with(callable, table of tables)', map_with),
+   map_with = X('map_with(table of tables, callable)', map_with),
 
    --- Memoize a function, by wrapping it in a functable.
    --
@@ -833,7 +768,7 @@ return {
    -- @return result
    -- @usage
    --   --> {'000', '001', '010', '011', '100', '101', '110', '111'}
-   --   map(table.concat, ielems, product({0,1}, {0, 1}, {0, 1}))
+   --   map(product({0,1}, {0, 1}, {0, 1}), table.concat)
    product = X('product(list...)', product),
 
    --- Make a predicate from a value, a function or a functable.
@@ -860,20 +795,6 @@ return {
    --   is_even = predicate(lambda '|e| e % 2 == 0')
    predicate = X('predicate(?any)', predicate),
 
-   --- Fold a binary function into an iterator.
-   -- @function reduce
-   -- @func fn reduce function
-   -- @param d initial first argument
-   -- @func[opt=std.pairs] ifn iterator function
-   -- @param ... iterator arguments
-   -- @return result
-   -- @see foldl
-   -- @see foldr
-   -- @usage
-   --   --> 2 ^ 3 ^ 4 ==> 4096
-   --   reduce(operator.pow, 2, std.ielems, {3, 4})
-   reduce = X('reduce(callable, any, [callable], ?any...)', reduce),
-
    --- Shape a table according to a list of dimensions.
    --
    -- Dimensions are given outermost first and items from the original
@@ -891,12 +812,12 @@ return {
    -- @todo Use ileaves instead of flatten (needs a while instead of a
    -- for in fill function)
    -- @function shape
-   -- @tparam table dims table of dimensions `{d1, ..., dn}`
    -- @tparam table t a table of elements
+   -- @tparam table dims table of dimensions `{d1, ..., dn}`
    -- @return reshaped list
    -- @usage
    --   --> {{'a', 'b'}, {'c', 'd'}, {'e', 'f'}}
-   --   shape({3, 2}, {'a', 'b', 'c', 'd', 'e', 'f'})
+   --   shape({'a', 'b', 'c', 'd', 'e', 'f'}, {3, 2})
    shape = X('shape(table, table)', shape),
 
    --- Zip a table of tables.
@@ -915,8 +836,8 @@ return {
 
    --- Zip a list of tables together with a function.
    -- @function zip_with
-   -- @tparam function fn function
    -- @tparam table tt table of tables
+   -- @tparam function fn function
    -- @treturn table a new table of results from calls to *fn* with arguments
    --    made from all elements the same key in the original tables; effectively
    --    the 'columns' in a simple list
@@ -925,9 +846,9 @@ return {
    -- @see zip
    -- @usage
    --   --> {'135', '24'}, {a='1', b='25'}
-   --   conc = bind(zip_with, {lambda '|...|table.concat {...}'})
+   --   conc = bind(zip_with, {[2] = lambda '|...|table.concat {...}'})
    --   conc {{1, 2}, {3, 4}, {5}}, conc {{a=1, b=2}, x={a=3, b=4}, {b=5}}
-   zip_with = X('zip_with(callable, table of tables)', zip_with),
+   zip_with = X('zip_with(table of tables, callable)', zip_with),
 }
 
 

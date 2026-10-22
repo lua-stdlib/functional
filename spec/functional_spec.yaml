@@ -9,78 +9,8 @@ before:
       'any', 'bind', 'callable', 'case', 'collect', 'compose', 'cond',
       'curry', 'filter', 'flatten', 'foldl', 'foldr', 'id', 'iter',
       'ireverse', 'lambda', 'map', 'map_with', 'memoize', 'nop', 'predicate',
-      'product', 'reduce',
-      'shape', 'zip', 'zip_with',
+      'product', 'shape', 'zip', 'zip_with',
    }
-
-   function getmetamethod(x, n)
-      local m = (getmetatable(x) or {})[n]
-      if type(m) == 'function' then
-         return m
-      end
-      return (getmetatable(m) or {}).__call
-   end
-
-   ipairs = (_VERSION == 'Lua 5.3') and ipairs or function(l)
-      return function(l, n)
-         n = n + 1
-         if l[n] ~= nil then
-            return n, l[n]
-         end
-      end, l, 0
-   end
-
-   if not pairs(setmetatable({},{__pairs=function() return false end})) then
-      local _pairs = pairs
-      pairs = function(t)
-         return (getmetamethod(t, '__pairs') or _pairs)(t)
-      end
-   end
-
-   function elems(t)
-      local fn, istate, ctrl = pairs(t)
-      return function(state, _)
-         local v
-         ctrl, v = fn(state, ctrl)
-         if ctrl then return v end
-      end, istate, true
-   end
-
-   function ielems(t)
-      local fn, istate, ctrl = ipairs(t)
-      return function(state, _)
-         local v
-         ctrl, v = fn(state, ctrl)
-         if ctrl then return v end
-      end, istate, true -- wrapped initial state
-   end
-
-   maxn = table.maxn or function(t)
-      local n = 0
-      for k in pairs(t) do
-         if type(k) == 'number' and k > n then n = k end
-      end
-      return n
-   end
-
-   function npairs(t)
-      local m = getmetamethod(t, '__len')
-      local i, n = 0, m and m(t) or maxn(t)
-      return function(t)
-         i = i + 1
-         if i <= n then return i, t[i] end
-       end,
-      t, i
-   end
-
-   function iter(...)
-      local l = pack(...)
-      local oob = l.n + 1
-      return function(l, n)
-         n = n - 1
-         if n > 0 then return n, l[n] or false end
-      end, l, oob
-   end
 
    M = require(this_module)
 
@@ -234,23 +164,27 @@ specify functional:
       f = M.collect
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.collect([callable], ?any...)', f)
-  - it accepts a lambda iterator:
-      expect(f(M.lambda '=ipairs(_1)', {'a', 'b'})).to_equal {'a', 'b'}
+      badargs.diagnose('std.functional.collect(table|function)', f)
 
-  - it collects a list of single return value iterator results:
-      expect(f(ielems, {'a', 'b', 'c'})).to_equal {'a', 'b', 'c'}
-  - it collects a table of key:value iterator results:
-      t = {'first', second='two', last=3}
-      expect(f(pairs, t)).to_equal(t)
-  - it defaults to npairs iteration:
-      expect(f {1, 2, [5]=5, a='b', c='d'}).to_equal {1, 2, [5]=5}
-  - it propagates nil arguments correctly:
-      expect(f {'a', nil, nil, 'd', 'e'}).to_equal {'a', [4]='d', [5]='e'}
-      expect(f(iter, 'a', nil, nil, 'd', 'e')).
-         to_equal {'a', false, false, 'd', 'e'}
-      expect(f(iter, nil, nil, 3, 4, nil, nil)).
-         to_equal {false, false, 3, 4, false, false}
+  - it works with an empty table:
+      expect(f {}).to_equal {n=0}
+  - it collects the values of a table:
+      expect(f {'a', 'b', 'c'}).to_equal {n=3, 'a', 'b', 'c'}
+  - it ignores keys outside the sequence:
+      expect(f {1, 2, [5]=5, a='b', c='d'}).to_equal {n=2, 1, 2}
+  - it takes the length from the n field:
+      expect(f {n=3, 'a'}).to_equal {n=3, 'a'}
+  - it keeps holes:
+      expect(f(pack('a', nil, nil, 'd', 'e'))).
+         to_equal {n=5, 'a', [4]='d', [5]='e'}
+  - it collects the results of an iterator function:
+      expect(f(('a b c'):gmatch '%a')).to_equal {n=3, 'a', 'b', 'c'}
+  - it takes the first result of each iteration:
+      expect(f(M.iter(ipairs {'x', 'y'}))).to_equal {n=2, 1, 2}
+  - it stops at the first nil result:
+      expect(f(M.iter(function(_, i)
+         if i ~= 3 then return i + 1 end
+      end, nil, 0))).to_equal {n=3, 1, 2, 3}
 
 
 - describe compose:
@@ -333,43 +267,43 @@ specify functional:
 - describe filter:
   - before:
       elements = {'a', 'b', 'c', 'd', 'e'}
-      inverse   = {a=1, b=2, c=3, d=4, e=5}
+      vowel    = function(e) return e:match '[aeiou]' end
+      functable = setmetatable({}, {__call = M.nop})
 
       f = M.filter
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.filter(callable, [callable], ?any...)', f)
-  - it accepts a lambda predicate and iterator:
-      expect(f(M.lambda '=_2:match "[aeiou]"', M.lambda '=ipairs(_1)', elements)).
-         to_equal {[1]='a', [5]='e'}
+      badargs.diagnose('std.functional.filter(table|function, ?any)', f)
 
   - it works with an empty table:
-      expect(f(M.id, pairs, {})).to_equal {}
-  - it iterates through element keys:
-      expect(f(M.id, ielems, elements)).to_equal {'a', 'b', 'c', 'd', 'e'}
-      expect(f(M.id, elems, inverse)).to_contain.a_permutation_of {1, 2, 3, 4, 5}
-  - it propagates nil arguments correctly:
-      t = {'a', nil, nil, 'd', 'e'}
-      expect(f(M.id, npairs, t)).to_equal(t)
-      expect(f(M.id, iter, nil, nil, 3, 4, nil, nil)).
-         to_equal {false, false, 3, 4, false, false}
-  - it passes all iteration result values to filter predicate:
-      t = {}
-      f(function(k, v) t[k] = v end, pairs, elements)
-      expect(t).to_equal(elements)
-  - it returns a list of filtered single return value iterator results:
-      expect(f(function(e) return e:match '[aeiou]' end, ielems, elements)).
-         to_equal {'a', 'e'}
-  - it returns a table of filtered key:value iterator results:
-      t = {'first', second=2, last='three'}
-      expect(f(function(k, v) return type(v) == 'string' end, pairs, t)).
-         to_equal {'first', last='three'}
-      expect(f(function(k, v) return k % 2 == 0 end, ipairs, elements)).
-         to_equal {[2]='b', [4]='d'}
-  - it defaults to pairs iteration:
-      t = {'first', second=2, last='three'}
-      expect(f(function(k, v) return type(v) == 'string' end, t)).
-         to_equal {'first', last='three'}
+      expect(f({}, M.id)).to_equal {n=0}
+  - it keeps the items that pass a predicate function:
+      expect(f(elements, vowel)).to_equal {n=2, 'a', 'e'}
+  - it compares items with any value that is not a function:
+      expect(f({1, 2, 1, 3}, 1)).to_equal {n=2, 1, 1}
+      expect(f({'a', 'b'}, 'b')).to_equal {n=1, 'b'}
+  - it compares items with nil:
+      expect(f(pack(1, nil, 2), nil)).to_equal {n=1}
+  - it treats a functable as a value:
+      expect(f({functable, 1, functable}, functable)).
+         to_equal {n=2, functable, functable}
+      expect(f({functable}, M.lambda '=true')).to_equal {n=0}
+  - it calls a functable wrapped by predicate:
+      expect(f(elements, M.predicate(M.lambda '=_1:match "[aeiou]"'))).
+         to_equal {n=2, 'a', 'e'}
+  - it keeps holes in the items:
+      expect(f(pack('a', nil, 'c'), function() return true end)).
+         to_equal {n=3, 'a', [3]='c'}
+  - it filters the results of an iterator function:
+      expect(f(('a b c'):gmatch '%a', function(e) return e ~= 'b' end)).
+         to_equal {n=2, 'a', 'c'}
+  - it passes all iteration results to the predicate:
+      expect(f(M.iter(ipairs(elements)), function(i, e)
+         return e == 'b' or i == 5
+      end)).to_equal {n=2, 2, 5}
+  - it does not perturb the argument table:
+      f(elements, vowel)
+      expect(elements).to_equal {'a', 'b', 'c', 'd', 'e'}
 
 
 - describe flatten:
@@ -384,9 +318,9 @@ specify functional:
   - it returns a table:
       expect(type(f(t))).to_be 'table'
   - it works for an empty table:
-      expect(f {}).to_equal {}
+      expect(f {}).to_equal {n=0}
   - it flattens a nested table:
-      expect(f(t)).to_equal {'one', 'two', 'three', 'four'}
+      expect(f(t)).to_equal {n=4, 'one', 'two', 'three', 'four'}
 
 
 - describe foldl:
@@ -395,18 +329,35 @@ specify functional:
       f = M.foldl
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.foldl(callable, [any], table)', f)
+      badargs.diagnose('std.functional.foldl(table|function, [any], callable)', f)
   - it accepts a lambda:
-      expect(f(M.lambda '=_1 + _2', 10000, {1, 10, 100})).to_be(10111)
+      expect(f({1, 10, 100}, 10000, M.lambda '=_1 + _2')).to_be(10111)
 
   - it works with an empty table:
-      expect(f(op.sum, 10000, {})).to_be(10000)
+      expect(f({}, 10000, op.sum)).to_be(10000)
   - it folds a binary function through a table:
-      expect(f(op.sum, 10000, {1, 10, 100})).to_be(10111)
+      expect(f({1, 10, 100}, 10000, op.sum)).to_be(10111)
   - it folds from left to right:
-      expect(f(op.pow, 2, {3, 4})).to_be((2 ^ 3) ^ 4)
-  - it supports eliding init argument:
-      expect(f(op.pow, {2, 3, 4})).to_be((2 ^ 3) ^ 4)
+      expect(f({3, 4}, 2, op.pow)).to_be((2 ^ 3) ^ 4)
+  - it defaults the accumulator to an empty table:
+      expect(f({'a', 'b'}, function(acc, e) acc[#acc + 1] = e end)).
+         to_equal {'a', 'b'}
+  - it keeps the accumulator when the function returns nil:
+      expect(f({1, 2, 3}, 0, function(acc, e)
+         if e ~= 2 then return acc + e end
+      end)).to_be(4)
+  - it can accumulate false:
+      expect(f({1}, true, M.lambda '=false')).to_be(false)
+  - it folds the results of an iterator function:
+      expect(f(('a b c'):gmatch '%a', '', M.lambda '=_1 .. _2')).to_be 'abc'
+  - it passes all iteration results to the function:
+      expect(f(M.iter(ipairs {'a', 'b'}), {}, function(acc, i, e)
+         acc[i] = e
+      end)).to_equal {'a', 'b'}
+  - it visits holes:
+      expect(f(pack(1, nil, 3), 0, function(acc, e)
+         return acc + (e or 10)
+      end)).to_be(14)
 
 
 - describe foldr:
@@ -415,19 +366,30 @@ specify functional:
       f = M.foldr
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.foldr(callable, [any], table)', f)
+      badargs.diagnose('std.functional.foldr(table|function, [any], callable)', f)
   - it accepts a lambda:
-      expect(f(M.lambda '=_1 / _2', 10, {10000, 100})).
+      expect(f({10000, 100}, 10, M.lambda '=_1 / _2')).
          to_be(10000 / (100 / 10))
 
   - it works with an empty table:
-      expect(f(op.sum, 1, {})).to_be(1)
+      expect(f({}, 1, op.sum)).to_be(1)
   - it folds a binary function through a table:
-      expect(f(op.sum, {10000, 100, 10, 1})).to_be(10111)
+      expect(f({10000, 100, 10, 1}, 0, op.sum)).to_be(10111)
   - it folds from right to left:
-      expect(f(op.quot, 10, {10000, 100})).to_be(10000 / (100 / 10))
-  - it supports eliding init argument:
-      expect(f(op.quot, {10000, 100, 10})).to_be(10000 / (100 / 10))
+      expect(f({10000, 100}, 10, op.quot)).to_be(10000 / (100 / 10))
+  - it defaults the accumulator to an empty table:
+      expect(f({'a', 'b'}, function(e, acc) acc[#acc + 1] = e end)).
+         to_equal {'b', 'a'}
+  - it keeps the accumulator when the function returns nil:
+      expect(f({1, 2, 3}, 0, function(e, acc)
+         if e ~= 2 then return acc + e end
+      end)).to_be(4)
+  - it folds the results of an iterator function from the right:
+      expect(f(('a b c'):gmatch '%a', '', M.lambda '=_2 .. _1')).to_be 'cba'
+  - it visits holes:
+      expect(f(pack(1, nil, 3), 0, function(e, acc)
+         return acc + (e or 10)
+      end)).to_be(14)
 
 
 - describe id:
@@ -568,58 +530,45 @@ specify functional:
 - describe map:
   - before:
       elements = {'a', 'b', 'c', 'd', 'e'}
-      inverse   = {a=1, b=2, c=3, d=4, e=5}
 
       f = M.map
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.map(callable, [callable], ?any...)', f)
-  - it accepts a lambda map function and iterator:
-      expect(f(M.lambda '=_2 .. "x"', M.lambda '=ipairs(_1)', {'a', 'b'})).
-         to_equal {'ax', 'bx'}
+      badargs.diagnose('std.functional.map(table|function, callable)', f)
+  - it accepts a lambda map function:
+      expect(f({'a', 'b'}, M.lambda '=_1 .. "x"')).to_equal {n=2, 'ax', 'bx'}
 
   - it works with an empty table:
-      expect(f(M.id, ipairs, {})).to_equal {}
-  - it iterates through elements:
-      expect(f(M.id, ipairs, elements)).to_equal(elements)
-      expect(f(M.id, pairs, inverse)).to_contain.a_permutation_of(elements)
-  - it propagates nil arguments correctly:
-      t = {'a', nil, nil, 'd', 'e'}
-      expect(f(M.id, npairs, t)).to_equal(t)
-      expect(f(M.id, iter, nil, nil, 3, 4, nil, nil)).
-         to_equal {false, false, 3, 4, false, false}
-  - it passes every result of every iteration to map function:
-      triples = function()
-         return function(_, i)
-            if i < 3 then
-               return i + 1, nil, 'x'
-            end
-         end, nil, 0
-      end
+      expect(f({}, M.id)).to_equal {n=0}
+  - it maps over the values of a table:
+      expect(f(elements, M.id)).to_equal {n=5, 'a', 'b', 'c', 'd', 'e'}
+      expect(f(elements, function(e) return e .. 'x' end)).
+         to_equal {n=5, 'ax', 'bx', 'cx', 'dx', 'ex'}
+  - it keeps holes:
+      expect(f(pack('a', nil, nil, 'd', 'e'), M.id)).
+         to_equal {n=5, 'a', [4]='d', [5]='e'}
+  - it leaves a hole where the function returns nil:
+      expect(f({1, 2, 3}, function(e) if e ~= 2 then return e end end)).
+         to_equal {n=3, 1, [3]=3}
+  - it keeps false results:
+      expect(f({1, 2}, M.lambda '=_1 == 2')).to_equal {n=2, false, true}
+  - it keeps only the first result of the function:
+      expect(f({1, 2}, function(e) return e, 'x' end)).
+         to_equal {n=2, 1, 2}
+  - it maps over the results of an iterator function:
+      expect(f(('a b'):gmatch '%a', function(e) return e .. 'x' end)).
+         to_equal {n=2, 'ax', 'bx'}
+  - it passes every result of every iteration to the function:
+      triples = M.iter(function(_, i)
+         if i < 3 then
+            return i + 1, nil, 'x'
+         end
+      end, nil, 0)
       count = function(...) return select('#', ...) end
-      expect(f(count, triples, 'arg')).to_equal {3, 3, 3}
-  - it passes all iteration result values to map function:
-      t = {}
-      f(function(k, v) t[k] = v end, pairs, elements)
-      expect(t).to_equal(elements)
-  - it returns a list of mapped single return value iterator results:
-      expect(f(function(e) return e:match '[aeiou]' end, ielems, elements)).
-         to_equal {'a', 'e'}
-      expect(f(function(e) return e .. 'x' end, elems, elements)).
-         to_contain.a_permutation_of {'ax', 'bx', 'cx', 'dx', 'ex'}
-  - it returns a table of mapped key:value iterator results:
-      t = {'first', second=2, last='three'}
-      expect(f(function(k, v) return type(v) == 'string' end, pairs, t)).
-         to_contain.a_permutation_of {true, false, true}
-      expect(f(function(k, v) return k % 2 == 0 end, ipairs, elements)).
-         to_equal {false, true, false, true, false}
-  - it supports key:value results from mapping function:
-      expect(f(function(k, v) return v, k end, pairs, elements)).
-         to_equal(inverse)
-  - it defaults to pairs iteration:
-      t = {'first', second=2, last='three'}
-      expect(f(function(k, v) return type(v) == 'string' end, t)).
-         to_contain.a_permutation_of {true, false, true}
+      expect(f(triples, count)).to_equal {n=3, 3, 3, 3}
+  - it does not perturb the argument table:
+      f(elements, M.id)
+      expect(elements).to_equal {'a', 'b', 'c', 'd', 'e'}
 
 
 - describe map_with:
@@ -630,27 +579,27 @@ specify functional:
       f = M.map_with
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.map_with(callable, table of tables)', f)
+      badargs.diagnose('std.functional.map_with(table of tables, callable)', f)
   - it accepts a lambda:
-      expect(f(M.lambda '=_1 + _2', {{1, 2, 3}, {4, 5}})).to_equal {3, 9}
+      expect(f({{1, 2, 3}, {4, 5}}, M.lambda '=_1 + _2')).to_equal {3, 9}
 
   - it works for an empty table:
-      expect(f(fn, {})).to_equal({})
+      expect(f({}, fn)).to_equal({})
   - it returns a table:
-      u = f(fn, t)
+      u = f(t, fn)
       expect(type(u)).to_be 'table'
   - it creates a new table:
       old = t
-      u = f(fn, t)
+      u = f(t, fn)
       expect(t).to_equal(old)
       expect(u).not_to_equal(old)
       expect(t).to_equal {{1, 2, 3}, {4, 5}}
   - it maps a function over a list of argument lists:
-      expect(f(fn, t)).to_equal {3, 2}
+      expect(f(t, fn)).to_equal {3, 2}
   - it discards hash-part arguments:
-      expect(f(fn, {{1,x=2,3}, {4,5,y='z'}})).to_equal {2, 2}
+      expect(f({{1,x=2,3}, {4,5,y='z'}}, fn)).to_equal {2, 2}
   - it maps a function over a table of argument lists:
-      expect(f(fn, {a={1,2,3}, b={4,5}})).to_equal {a=3, b=2}
+      expect(f({a={1,2,3}, b={4,5}}, fn)).to_equal {a=3, b=2}
 
 
 - describe memoize:
@@ -774,57 +723,23 @@ specify functional:
       badargs.diagnose('std.functional.product(list...)', f)
 
   - it works with an empty table:
-      expect(f {}).to_equal {}
+      expect(f {}).to_equal {n=0}
   - it returns a list of elements from a single argument:
-      expect(f {'a', 'b', 'c'}).to_equal {{'a'}, {'b'}, {'c'}}
+      expect(f {'a', 'b', 'c'}).to_equal {n=3, {'a'}, {'b'}, {'c'}}
   - it lists combinations with one element from each argument:
       expect(f({1, 2, 3}, {4, 5, 6})).to_equal {
+         n=9,
          {1, 4}, {1, 5}, {1, 6},
          {2, 4}, {2, 5}, {2, 6},
          {3, 4}, {3, 5}, {3, 6},
       }
       expect(f({1, 2}, {3, 4}, {5, 6})).to_equal {
+         n=8,
          {1, 3, 5}, {1, 3, 6},   {1, 4, 5}, {1, 4, 6},
          {2, 3, 5}, {2, 3, 6},   {2, 4, 5}, {2, 4, 6},
       }
-      expect(M.map(table.concat, ielems, f({0,1},{0,1},{0,1}))).
-         to_equal {'000', '001', '010', '011', '100', '101', '110', '111'}
-
-
-- describe reduce:
-  - before:
-      op = require 'std.functional.operator'
-
-      f = M.reduce
-
-  - context with bad arguments:
-      badargs.diagnose('std.functional.reduce(callable, any, [callable], ?any...)', f)
-  - it accepts a lambda accumulator and iterator:
-      expect(f(M.lambda '=_1 + _3', 2, M.lambda '=ipairs(_1)', {3, 4})).
-         to_be(2 + 3 + 4)
-
-  - it works with an empty table:
-      expect(f(op.sum, 2, ipairs, {})).to_be(2)
-  - it calls a binary function over single return value iterator results:
-      expect(f(op.sum, 2, ielems, {3})).
-         to_be(2 + 3)
-      expect(f(op.prod, 2, ielems, {3, 4})).
-         to_be(2 * 3 * 4)
-  - it calls a binary function over key:value iterator results:
-      expect(f(op.sum, 2, ielems, {3})).to_be(2 + 3)
-      expect(f(op.prod, 2, ielems, {3, 4})).to_be(2 * 3 * 4)
-  - it propagates nil arguments correctly:
-      function set(t, k, v) t[k] = tostring(v) return t end
-      expect(f(set, {}, npairs, {1, nil, nil, 'a', false})).
-         to_equal {'1', 'nil', 'nil', 'a', 'false'}
-      expect(f(set, {}, npairs, {nil, nil, '3'})).
-         to_equal {'nil', 'nil', '3'}
-      expect(f(set, {}, iter, nil, nil, 3, 4, nil, nil)).
-         to_equal {'false', 'false', '3', '4', 'false', 'false'}
-  - it reduces elements from left to right:
-      expect(f(op.pow, 2, ielems, {3, 4})).to_be((2 ^ 3) ^ 4)
-  - it passes all iterator results to accumulator function:
-      expect(f(rawset, {}, {'one', two=5})).to_equal {'one', two=5}
+      expect(M.map(f({0,1},{0,1},{0,1}), table.concat)).
+         to_equal {n=8, '000', '001', '010', '011', '100', '101', '110', '111'}
 
 
 - describe shape:
@@ -837,23 +752,23 @@ specify functional:
       badargs.diagnose('std.functional.shape(table, table)', f)
 
   - it returns a table:
-      expect(objtype(f({2, 3}, l))).to_be 'table'
+      expect(objtype(f(l, {2, 3}))).to_be 'table'
   - it works for an empty table:
-      expect(f({0}, {})).to_equal({})
+      expect(f({}, {0})).to_equal({})
   - it returns the result in a new table:
-      expect(f({2, 3}, l)).not_to_be(l)
+      expect(f(l, {2, 3})).not_to_be(l)
   - it does not perturb the argument table:
-      f({2, 3}, l)
+      f(l, {2, 3})
       expect(l).to_equal {1, 2, 3, 4, 5, 6}
   - it reshapes a table according to given dimensions:
-      expect(f({2, 3}, l)).
+      expect(f(l, {2, 3})).
          to_equal({{1, 2, 3}, {4, 5, 6}})
-      expect(f({3, 2}, l)).
+      expect(f(l, {3, 2})).
          to_equal({{1, 2}, {3, 4}, {5, 6}})
   - it treats 0-valued dimensions as an indefinite number:
-      expect(f({2, 0}, l)).
+      expect(f(l, {2, 0})).
          to_equal({{1, 2, 3}, {4, 5, 6}})
-      expect(f({0, 2}, l)).
+      expect(f(l, {0, 2})).
          to_equal({{1, 2}, {3, 4}, {5, 6}})
 
 
@@ -884,23 +799,23 @@ specify functional:
       f = M.zip_with
 
   - context with bad arguments:
-      badargs.diagnose('std.functional.zip_with(callable, table of tables)', f)
+      badargs.diagnose('std.functional.zip_with(table of tables, callable)', f)
   - it accepts a lambda:
-      expect(f(M.lambda '=_1 + _2', {{1, 2}, {3, 4}})).to_equal {4, 6}
+      expect(f({{1, 2}, {3, 4}}, M.lambda '=_1 + _2')).to_equal {4, 6}
 
   - it works for an empty table:
-      expect(f(fn, {})).to_equal {}
+      expect(f({}, fn)).to_equal {}
   - it returns a table:
-      expect(type(f(fn, tt))).to_be 'table'
+      expect(type(f(tt, fn))).to_be 'table'
   - it returns the result in a new table:
-      expect(f(fn, tt)).not_to_be(tt)
+      expect(f(tt, fn)).not_to_be(tt)
   - it does not perturb the argument list:
-      m = f(fn, tt)
+      m = f(tt, fn)
       expect(tt).to_equal {{1, 2}, {3, 4}, {5}}
   - it combines column entries with a function:
-      expect(f(fn, tt)).to_equal {135, 24}
+      expect(f(tt, fn)).to_equal {135, 24}
   - it discards hash-part arguments:
-      expect(f(fn, {{1,2}, x={3,4}, {[2]=5}})).to_equal {1, 25}
+      expect(f({{1,2}, x={3,4}, {[2]=5}}, fn)).to_equal {1, 25}
   - it combines matching key entries with a function:
-      expect(f(fn, {{a=1,b=2}, {a=3,b=4}, {b=5}})).
+      expect(f({{a=1,b=2}, {a=3,b=4}, {b=5}}, fn)).
          to_equal {a=13, b=245}

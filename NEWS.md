@@ -2,6 +2,16 @@
 
 ## Noteworthy changes in release ?.? (????-??-?) [?]
 
+### Incompatible changes
+
+  - `collect`, `filter`, `foldl`, `foldr`, `map`, `map_with`, `shape` and
+    `zip_with` take their data first and their function last, and what
+    they iterate is a table or an iterator function, rather than
+    `(fn, ifn, ...)`.  `reduce` is replaced by `foldl`, which also takes
+    iterators, and `foldl` and `foldr` default their accumulator to `{}`.
+    `collect`, `filter`, `map`, `flatten` and `product` return lists,
+    with their length in field `n`.
+
 ### New features
 
   - std.functional builds with luke instead of make.  To install
