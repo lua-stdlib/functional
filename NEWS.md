@@ -12,6 +12,10 @@
     `collect`, `filter`, `map`, `flatten` and `product` return lists,
     with their length in field `n`.
 
+  - `case` takes its default from `branches.default`, in place of
+    `branches[1]`, and `cond` takes `{test, branch}` clauses in place of
+    alternating arguments.
+
 ### New features
 
   - std.functional builds with luke instead of make.  To install
@@ -33,6 +37,8 @@
     `contains(t, nil)` to ask whether `t` has a hole.  New `mapvalues`
     maps the values of a table, and `tabulate` makes a table from the
     keys and values that a function returns.
+
+  - `case` matches strings against `{pattern, branch}` pairs.
 
 ### Bug fixes
 

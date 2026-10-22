@@ -121,12 +121,12 @@ specify functional:
       yes      = function() return true end
       no       = function() return false end
       default  = function(s) return s end
-      branches = {yes=yes, no=no, default}
+      branches = {yes=yes, no=no, default=default}
 
       f = M.case
 
   - context with bad arguments: |
-      badargs.diagnose('std.functional.case(?any, #table)', f)
+      badargs.diagnose('std.functional.case(?any, table)', f)
 
   - it matches against branch keys:
       expect(f('yes', branches)).to_be(true)
@@ -135,18 +135,30 @@ specify functional:
       expect(f('none', branches)).to_be 'none'
   - it returns nil for unmatched keys with no default:
       expect(f('none', {yes=yes, no=no})).to_be(nil)
+  - it returns nil for no branches:
+      expect(f('x', {})).to_be(nil)
   - it returns non-function matches:
       expect(f('t', {t=true})).to_be(true)
+  - it matches a false branch:
+      expect(f('f', {f=false, default='other'})).to_be(false)
+  - it matches keys that are not strings:
+      expect(f(5, {[5]='five'})).to_be 'five'
+      expect(f(true, {[true]='yes'})).to_be 'yes'
+  - it matches nil to the default:
+      expect(f(nil, {default='dflt'})).to_be 'dflt'
   - it evaluates returned functions:
       expect(f('fn', {fn = function() return true end})).
          to_be(true)
   - it passes 'with' to function matches:
-      expect(f('with', {function(s) return s end})).to_be 'with'
+      expect(f('with', {with = function(s) return s .. '!' end})).
+         to_be 'with!'
+  - it passes 'with' to a function default:
+      expect(f('with', {default = function(s) return s end})).to_be 'with'
   - it evaluates returned functables:
       functable = setmetatable({}, {__call = function(t, with) return with end})
-      expect(f('functable', {functable})).to_be 'functable'
+      expect(f('functable', {functable=functable})).to_be 'functable'
   - it evaluates lambda matches:
-      branches = {x=M.lambda '=_1 .. "!"', M.lambda '=_1 .. "?"'}
+      branches = {x=M.lambda '=_1 .. "!"', default=M.lambda '=_1 .. "?"'}
       expect(f('x', branches)).to_be 'x!'
       expect(f('y', branches)).to_be 'y?'
   - it evaluates 'with' exactly once:
@@ -156,8 +168,46 @@ specify functional:
          prince   = function() return 'one' end,
          princes  = function() return 'many' end,
          princess = function() return 'one' end,
-                    function() return 'gibberish' end,
+         default  = function() return 'gibberish' end,
       })).to_be 'many'
+  - context with patterns:
+    - before:
+        branches = {
+           {'%d+', 'number'},
+           {'(%a+)=(%a+)', function(k, v) return k .. ':' .. v end},
+           {'%a+', function(...) return select('#', ...) .. ':' .. ... end},
+           exact = 'exact',
+           default = 'none',
+        }
+    - it matches a string against patterns:
+        expect(f('42', branches)).to_be 'number'
+    - it passes the captures to a function branch:
+        expect(f('a=b', branches)).to_be 'a:b'
+    - it passes the whole match if there are no captures:
+        expect(f('abc', branches)).to_be '1:abc'
+    - it anchors patterns at both ends:
+        expect(f('x42', branches)).to_be 'none'
+        expect(f('42x', branches)).to_be 'none'
+        expect(f('', branches)).to_be 'none'
+    - it tries patterns in order:
+        expect(f('a=b', {{'%a=%a', 'first'}, {'%a+=%a+', 'second'}})).
+           to_be 'first'
+        expect(f('a=b', {{'%a+=%a+', 'second'}, {'%a=%a', 'first'}})).
+           to_be 'second'
+    - it prefers an exact key to a pattern:
+        expect(f('exact', branches)).to_be 'exact'
+        expect(f('exact', {{'%a+', 'pattern'}, exact = 'exact'})).
+           to_be 'exact'
+    - it matches a false branch:
+        expect(f('x', {{'x', false}, default = 'dflt'})).to_be(false)
+    - it only matches strings against patterns:
+        expect(f(42, {{'%d+', 'number'}, default = 'dflt'})).to_be 'dflt'
+        expect(f(nil, {{'.*', 'any'}, default = 'dflt'})).to_be 'dflt'
+        expect(f({}, {{'.*', 'any'}, default = 'dflt'})).to_be 'dflt'
+    - it ignores array entries that are not pattern pairs:
+        expect(f('x', {'one', {}, {5}, default = 'dflt'})).to_be 'dflt'
+    - it falls through to the default:
+        expect(f('1 2', branches)).to_be 'none'
 
 
 - describe collect:
@@ -211,33 +261,43 @@ specify functional:
 
 - describe cond:
   - before:
-      yes      = function() return true end
-      no       = function() return false end
-      default  = function(s) return s end
-      branches = {yes=yes, no=no, default}
-
       f = M.cond
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.cond([table...])', f)
 
   - it returns nil for no arguments:
       expect(f()).to_be(nil)
-  - it evaluates a single function argument:
-      expect(f(function() return true end)).to_be(true)
-  - it evaluates a single functable argument:
-      functable = setmetatable({}, {__call = function() return true end})
-      expect(f(functable)).to_be(true)
-  - it returns a non-callable single argument directly:
-      expect(f 'foo').to_be 'foo'
-  - it evaluates a branch function if expr is truthy:
-      expect(f('truthy', function(s) return s end)).to_be 'truthy'
-  - it returns nil if the last expr is falsey:
-      expect(f(nil, function(s) return 'falsey' end)).to_be(nil)
-      expect(f(false, true, false, true)).to_be(nil)
-  - it recurses with remaining arguments if first argument is falsey:
-      expect(f(nil, true, 42, M.id)).to_be(42)
-      expect(f(nil, true, false, false, 42, M.id)).to_be(42)
+  - it returns the branch of a clause whose test is truthy:
+      expect(f {true, 'foo'}).to_be 'foo'
+      expect(f {0, 'zero'}).to_be 'zero'
+      expect(f {'', 'empty'}).to_be 'empty'
+  - it evaluates a branch function with the test:
+      expect(f {'truthy', function(s) return s .. '!' end}).to_be 'truthy!'
+  - it evaluates a branch functable with the test:
+      functable = setmetatable({}, {__call = function(_, s) return s end})
+      expect(f {'truthy', functable}).to_be 'truthy'
   - it evaluates lambda branches:
-      expect(f(M.lambda '=true')).to_be(true)
-      expect(f('truthy', M.lambda '=_1 .. "!"')).to_be 'truthy!'
+      expect(f {'truthy', M.lambda '=_1 .. "!"'}).to_be 'truthy!'
+  - it returns nil if no test is truthy:
+      expect(f({nil, 'a'}, {false, 'b'})).to_be(nil)
+      expect(f {false, true}).to_be(nil)
+  - it treats a nil test as falsey:
+      expect(f({nil, 'a'}, {true, 'b'})).to_be 'b'
+  - it tries the clauses in order:
+      expect(f({false, 1}, {true, 2}, {true, 3})).to_be(2)
+  - it does not evaluate branches of clauses that fail:
+      expect(f({false, error}, {true, 'ok'})).to_be 'ok'
+  - it does not look at clauses after one that passes:
+      unread = setmetatable({}, {__index = function() error 'read' end})
+      expect(f({true, 1}, unread)).to_be(1)
+  - it returns false and nil branches:
+      expect(f {true, false}).to_be(false)
+      expect(f({true}, {true, 'later'})).to_be(nil)
+  - it can be written as an if chain:
+      n = 5
+      expect(f({n < 0, 'negative'}, {n == 0, 'zero'}, {true, 'positive'})).
+         to_be 'positive'
 
 
 - describe contains:

@@ -185,12 +185,33 @@ local function callable(x)
 end
 
 
-local function case(with, branches)
-   local match = branches[with] or branches[1]
-   if callable(match) then
-      return match(with)
+-- Call a branch if it is callable, otherwise return it as it is.
+local function call(branch, ...)
+   if callable(branch) then
+      return branch(...)
    end
-   return match
+   return branch
+end
+
+
+local function case(with, branches)
+   if branches[with] ~= nil then
+      return call(branches[with], with)
+   end
+
+   if type(with) == 'string' then
+      for i = 1, len(branches) do
+         local clause = branches[i]
+         if type(clause) == 'table' and type(clause[1]) == 'string' then
+            local captures = pack(with:match('^' .. clause[1] .. '$'))
+            if captures[1] ~= nil then
+               return call(clause[2], unpack(captures, 1, captures.n))
+            end
+         end
+      end
+   end
+
+   return call(branches.default, with)
 end
 
 
@@ -218,17 +239,14 @@ local function compose(...)
 end
 
 
-local function cond(expr, branch, ...)
-   if branch == nil and select('#', ...) == 0 then
-      expr, branch = true, expr
-   end
-   if expr then
-      if callable(branch) then
-         return branch(expr)
+local function cond(...)
+   local clauses = pack(...)
+   for i = 1, clauses.n do
+      local test, branch = unpack(clauses[i], 1, 2)
+      if test then
+         return call(branch, test)
       end
-      return branch
    end
-   return cond(...)
 end
 
 
@@ -607,24 +625,34 @@ return {
    callable = X('callable([?any])', callable),
 
    --- A rudimentary case statement.
-   -- Match *with* against keys in *branches* table.
+   -- Select a branch by matching *with* against *branches*: first as a
+   -- key, then, if *with* is a string, against the patterns of the
+   -- `{pattern, branch}` pairs in the array part of *branches*, in order,
+   -- and last, `branches.default`.  A key counts if its branch is not
+   -- nil, so a branch can be `false`.  A pattern is anchored at both
+   -- ends, and its captures, or the whole match if it has none, are
+   -- passed to its branch.  Integer keys share the array part with the
+   -- pattern pairs, so don't use both in one table.
    -- @function case
    -- @param with expression to match
-   -- @tparam table branches map possible matches to functions
-   -- @return the value associated with a matching key, or the first non-key
-   --    value if no key matches. Function or functable valued matches are
-   --    called using *with* as the sole argument, and the result of that call
-   --    returned; otherwise the matching value associated with the matching
-   --    key is returned directly; or else `nil` if there is no match and no
-   --    default.
+   -- @tparam table branches map possible matches to branches
+   -- @return the branch selected, or if it is a function or functable,
+   --    the result of calling it with *with* (or the captures of a
+   --    matching pattern); otherwise `nil`
    -- @see cond
    -- @usage
    --   return case(type(object), {
-   --      table  = 'table',
-   --      string = function() return 'string' end,
-   --               function(s) error('unhandled type: ' .. s) end,
+   --      table   = 'table',
+   --      string  = function() return 'string' end,
+   --      default = function(s) error('unhandled type: ' .. s) end,
    --   })
-   case = X('case(?any, #table)', case),
+   --
+   --   case(arg, {
+   --      {'%-%-(%w+)=(.*)', function(name, value) opts[name] = value end},
+   --      {'%-(%w)', function(flag) opts[flag] = true end},
+   --      default = function(s) files[#files + 1] = s end,
+   --   })
+   case = X('case(?any, table)', case),
 
    --- Collect the items of an iterable into a list.
    -- An iterable is a table, whose items are its values from 1 to its `n`
@@ -656,26 +684,25 @@ return {
    compose = X('compose(callable...)', compose),
 
    --- A rudimentary condition-case statement.
-   -- If *expr* is 'truthy' return *branch* if given, otherwise *expr*
-   -- itself. If the return value is a function or functable, then call it
-   -- with *expr* as the sole argument and return the result; otherwise
-   -- return it explicitly.   If *expr* is 'falsey', then recurse with the
-   -- first two arguments stripped.
+   -- Each clause is a `{test, branch}` pair, and the first clause whose
+   -- *test* is 'truthy' selects its *branch*, as an if/elseif chain
+   -- does; use a `true` test for the last clause to make it the default.
+   -- A test can be nil, which is 'falsey' like any other.
    -- @function cond
-   -- @param expr a Lua expression
-   -- @param branch a function, functable or value to use if *expr* is
-   --    'truthy'
-   -- @param ... additional arguments to retry if *expr* is 'falsey'
+   -- @tparam table ... clauses `{test, branch}` pairs
+   -- @return the branch of the first clause that passes, or if it is a
+   --    function or functable, the result of calling it with the *test*;
+   --    otherwise `nil`
    -- @see case
    -- @usage
    --   -- recursively calculate the nth triangular number
    --   function triangle(n)
    --      return cond(
-   --         n <= 0, 0,
-   --         n == 1, 1,
-   --                 function() return n + triangle(n - 1) end)
+   --         {n <= 0, 0},
+   --         {n == 1, 1},
+   --         {true, function() return n + triangle(n - 1) end})
    --   end
-   cond = cond, -- any number of any type arguments!
+   cond = X('cond([table...])', cond),
 
    --- Whether any item of an iterable matches a value or predicate.
    -- Anything but a plain function is compared with each item, as `==`,
