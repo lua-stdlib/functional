@@ -7,7 +7,7 @@ before:
 
    exported_apis = {
       'any', 'bind', 'callable', 'case', 'collect', 'compose', 'cond',
-      'curry', 'filter', 'flatten', 'foldl', 'foldr', 'id', 'iter',
+      'curry', 'default', 'filter', 'flatten', 'foldl', 'foldr', 'id', 'iter',
       'ireverse', 'lambda', 'map', 'map_with', 'memoize', 'nop', 'predicate',
       'product', 'shape', 'zip', 'zip_with',
    }
@@ -262,6 +262,32 @@ specify functional:
       bin = f(op.pow, 2)(2)
       expect(bin(2)).to_be(op.pow(2, 2))
       expect(bin(10)).to_be(op.pow(2, 10))
+
+
+- describe default:
+  - before:
+      f = M.default
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.default(?any, [?any])', f)
+
+  - it returns its first argument:
+      expect(f('a', 'b')).to_be 'a'
+      expect(f({1}, {2})).to_equal {1}
+  - it returns the default for nil:
+      expect(f(nil, 'b')).to_be 'b'
+  - it keeps false, zero, and an empty string:
+      expect(f(false, 'b')).to_be(false)
+      expect(f(0, 'b')).to_be(0)
+      expect(f('', 'b')).to_be ''
+  - it keeps an empty table:
+      t = {}
+      expect(f(t, 'b')).to_be(t)
+  - it keeps a lambda, which is an empty table:
+      l = M.lambda '=_1'
+      expect(f(l, M.id)).to_be(l)
+  - it returns nil without a default:
+      expect(f(nil)).to_be(nil)
 
 
 - describe filter:

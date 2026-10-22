@@ -25,6 +25,9 @@
     functable, and `iter` makes an iterator function from a generic `for`
     triple.
 
+  - New `default` returns its first argument unless it is nil, for an
+    optional argument.
+
 ### Bug fixes
 
   - `map` passes every result of every iteration to its function, even

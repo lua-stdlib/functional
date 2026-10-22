@@ -88,6 +88,23 @@ local function flatiter(t)
 end
 
 
+local function default(x, d)
+   if x == nil then
+      return d
+   end
+   return x
+end
+
+
+-- The first of *...*, even if it is nil, or else *d* if there is none.
+local function given(d, ...)
+   if select('#', ...) == 0 then
+      return d
+   end
+   return (...)
+end
+
+
 local function any(...)
    local fns = pack(...)
 
@@ -593,6 +610,20 @@ return {
    --   add = curry(function(x, y) return x + y end, 2)
    --   incr, decr = add(1), add(-1)
    curry = X('curry(callable, int)', curry),
+
+   --- A value, unless it is nil, then a default.
+   -- Only nil is missing, so `false`, `0`, an empty string or table, and
+   -- a functable such as a @{lambda}, which is an empty table, are all
+   -- values that *x* can be.  Use it for an optional argument.  Unlike
+   -- `either`, which is for a result that can be empty, an empty table
+   -- is something.
+   -- @function default
+   -- @param x a value
+   -- @param[opt] d what to return if *x* is nil
+   -- @return *x*, or *d*
+   -- @usage
+   --   cmp = default(cmp, function(a, b) return a < b end)
+   default = X('default(?any, [?any])', default),
 
    --- Filter the items of an iterable with a predicate.
    -- Only a plain function is a predicate; anything else, a functable
