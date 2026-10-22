@@ -7,9 +7,10 @@ before:
 
    exported_apis = {
       'any', 'bind', 'callable', 'case', 'collect', 'compose', 'cond',
-      'curry', 'default', 'filter', 'flatten', 'foldl', 'foldr', 'id', 'iter',
-      'ireverse', 'lambda', 'map', 'map_with', 'memoize', 'nop', 'predicate',
-      'product', 'shape', 'zip', 'zip_with',
+      'contains', 'curry', 'default', 'detect', 'filter', 'flatten', 'foldl',
+      'foldr', 'id', 'iter', 'ireverse', 'lambda', 'map', 'map_with',
+      'mapvalues', 'memoize', 'nop', 'partition', 'predicate', 'product',
+      'reject', 'shape', 'some', 'tabulate', 'zip', 'zip_with',
    }
 
    M = require(this_module)
@@ -239,6 +240,44 @@ specify functional:
       expect(f('truthy', M.lambda '=_1 .. "!"')).to_be 'truthy!'
 
 
+- describe contains:
+  - before:
+      functable = setmetatable({}, {__call = M.nop})
+
+      f = M.contains
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.contains(table|function, ?any)', f)
+
+  - it works with an empty table:
+      expect(f({}, 1)).to_be(false)
+  - it finds a value among the items:
+      expect(f({'a', 'b', 'c'}, 'b')).to_be(true)
+      expect(f({'a', 'b', 'c'}, 'd')).to_be(false)
+  - it finds false:
+      expect(f({1, false}, false)).to_be(true)
+  - it does not look inside tables:
+      expect(f({{1}}, {1})).to_be(false)
+  - it asks whether there is a hole with nil:
+      expect(f(pack(1, nil, 3), nil)).to_be(true)
+      expect(f({1, 2}, nil)).to_be(false)
+  - it uses a plain function as a predicate:
+      expect(f({1, 2, 3}, function(e) return e > 2 end)).to_be(true)
+      expect(f({1, 2, 3}, function(e) return e > 3 end)).to_be(false)
+  - it treats a functable as a value:
+      expect(f({functable}, functable)).to_be(true)
+      expect(f({1, 2}, M.lambda '=true')).to_be(false)
+  - it calls a functable wrapped by predicate:
+      expect(f({1, 2}, M.predicate(M.lambda '=_1 == 2'))).to_be(true)
+  - it searches the results of an iterator function:
+      expect(f(('a b c'):gmatch '%a', 'c')).to_be(true)
+      expect(f(('a b c'):gmatch '%a', 'd')).to_be(false)
+  - it stops at the first match:
+      n = 0
+      f({1, 2, 3}, function(e) n = n + 1 return e == 2 end)
+      expect(n).to_be(2)
+
+
 - describe curry:
   - before:
       op = require 'std.functional.operator'
@@ -288,6 +327,47 @@ specify functional:
       expect(f(l, M.id)).to_be(l)
   - it returns nil without a default:
       expect(f(nil)).to_be(nil)
+
+
+- describe detect:
+  - before:
+      f = M.detect
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.detect(table|function, [?any], [callable])', f)
+  - it accepts a lambda map function:
+      expect(f({1, 2, 3}, M.predicate(M.lambda '=_1 > 2'), M.lambda '=_1 * 2')).
+         to_be(4)
+
+  - it works with an empty table:
+      expect(f({})).to_be(nil)
+  - it finds the first item that passes a predicate function:
+      expect(f({1, 2, 3, 4}, function(e) return e > 2 end)).to_be(3)
+  - it finds the first item equal to any other value:
+      expect(f({'a', 'b', 'a'}, 'b')).to_be 'b'
+  - it returns nil if no item passes:
+      expect(f({1, 2}, function(e) return e > 2 end)).to_be(nil)
+  - it defaults to the first item that is not nil:
+      expect(f(pack(nil, false, 3))).to_be(false)
+      expect(f(pack(nil, nil, 3), nil)).to_be(3)
+  - it finds the first result of a map function that passes:
+      expect(f({1, 2, 3, 4}, function(r) return r > 4 end, M.lambda '=_1 * 2')).
+         to_be(6)
+  - it defaults to the first result of a map function that is not nil:
+      expect(f({1, 2, 3}, nil, function(e) if e > 1 then return e * 2 end end)).
+         to_be(4)
+  - it does not call the map function after a result passes:
+      n = 0
+      f({1, 2, 3}, nil, function(e) n = n + 1 return e end)
+      expect(n).to_be(1)
+  - it searches the results of an iterator function:
+      expect(f(('a b c'):gmatch '%a', 'b')).to_be 'b'
+  - it passes all iteration results to the predicate, and returns the first:
+      expect(f(M.iter(ipairs {'a', 'b'}), function(i, e) return e == 'b' end)).
+         to_be(2)
+  - it passes all map function results to the predicate:
+      expect(f({1, 2}, function(r, x) return x == 'y' end,
+               function(e) return e, e == 2 and 'y' end)).to_be(2)
 
 
 - describe filter:
@@ -628,6 +708,36 @@ specify functional:
       expect(f({a={1,2,3}, b={4,5}}, fn)).to_equal {a=3, b=2}
 
 
+- describe mapvalues:
+  - before:
+      f = M.mapvalues
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.mapvalues(table, callable)', f)
+  - it accepts a lambda:
+      expect(f({a=1, b=2}, M.lambda '=_1 * 2')).to_equal {a=2, b=4}
+
+  - it works with an empty table:
+      expect(f({}, M.id)).to_equal {}
+  - it maps every value, and keeps the keys:
+      expect(f({'a', x='b', [5]='c'}, function(v) return v .. '!' end)).
+         to_equal {'a!', x='b!', [5]='c!'}
+  - it stores false results:
+      expect(f({a=1, b=2}, M.lambda '=_1 == 2')).to_equal {a=false, b=true}
+  - it leaves out keys for which the function returns nil:
+      expect(f({a=1, b=2}, function(v) if v ~= 1 then return v end end)).
+         to_equal {b=2}
+  - it passes only the value:
+      expect(f({a=1}, function(...) return select('#', ...) end)).
+         to_equal {a=1}
+  - it keeps only the first result of the function:
+      expect(f({a=1}, function(v) return v, 'x' end)).to_equal {a=1}
+  - it does not perturb the argument table:
+      t = {a=1}
+      f(t, M.lambda '=_1 + 1')
+      expect(t).to_equal {a=1}
+
+
 - describe memoize:
   - before:
       f = M.memoize
@@ -705,6 +815,41 @@ specify functional:
       expect(f(1, 'two', false)).to_be(nil)
 
 
+- describe partition:
+  - before:
+      even = function(e) return e % 2 == 0 end
+
+      f = M.partition
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.partition(table|function, ?any)', f)
+
+  - it works with an empty table:
+      pass, fail = f({}, even)
+      expect(pass).to_equal {n=0}
+      expect(fail).to_equal {n=0}
+  - it splits the items by a predicate function:
+      pass, fail = f({1, 2, 3, 4, 5}, even)
+      expect(pass).to_equal {n=2, 2, 4}
+      expect(fail).to_equal {n=3, 1, 3, 5}
+  - it compares items with any other value:
+      pass, fail = f({1, 2, 1}, 1)
+      expect(pass).to_equal {n=2, 1, 1}
+      expect(fail).to_equal {n=1, 2}
+  - it keeps holes in the items:
+      pass, fail = f(pack('a', nil, 'c'), function(e) return e ~= nil end)
+      expect(pass).to_equal {n=2, 'a', 'c'}
+      expect(fail).to_equal {n=1}
+  - it splits the results of an iterator function:
+      pass, fail = f(('a b c'):gmatch '%a', function(e) return e == 'b' end)
+      expect(pass).to_equal {n=1, 'b'}
+      expect(fail).to_equal {n=2, 'a', 'c'}
+  - it passes all iteration results to the predicate:
+      pass, fail = f(M.iter(ipairs {'a', 'b', 'c'}), function(i, e) return e == 'b' end)
+      expect(pass).to_equal {n=1, 2}
+      expect(fail).to_equal {n=2, 1, 3}
+
+
 - describe predicate:
   - before:
       f = M.predicate
@@ -768,6 +913,31 @@ specify functional:
          to_equal {n=8, '000', '001', '010', '011', '100', '101', '110', '111'}
 
 
+- describe reject:
+  - before:
+      even = function(e) return e % 2 == 0 end
+
+      f = M.reject
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.reject(table|function, ?any)', f)
+
+  - it works with an empty table:
+      expect(f({}, even)).to_equal {n=0}
+  - it keeps the items that fail a predicate function:
+      expect(f({1, 2, 3, 4, 5}, even)).to_equal {n=3, 1, 3, 5}
+  - it rejects the items equal to any other value:
+      expect(f({1, 2, 1, 3}, 1)).to_equal {n=2, 2, 3}
+  - it treats a functable as a value:
+      functable = setmetatable({}, {__call = M.nop})
+      expect(f({functable, 1}, functable)).to_equal {n=1, 1}
+      expect(f({1}, M.lambda '=true')).to_equal {n=1, 1}
+  - it keeps holes in the items:
+      expect(f(pack('a', nil, 'c'), 'a')).to_equal {n=2, [2]='c'}
+  - it rejects from the results of an iterator function:
+      expect(f(('a b c'):gmatch '%a', 'b')).to_equal {n=2, 'a', 'c'}
+
+
 - describe shape:
   - before:
       l = {1, 2, 3, 4, 5, 6}
@@ -796,6 +966,69 @@ specify functional:
          to_equal({{1, 2, 3}, {4, 5, 6}})
       expect(f(l, {0, 2})).
          to_equal({{1, 2}, {3, 4}, {5, 6}})
+
+
+- describe some:
+  - before:
+      f = M.some
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.some(table|function, [?any])', f)
+
+  - it works with an empty table:
+      expect(f {}).to_be(false)
+  - it defaults to any truthy item:
+      expect(f {false, 'x'}).to_be(true)
+      expect(f {false, false}).to_be(false)
+  - it compares items with an explicit nil:
+      expect(f({false, 0}, nil)).to_be(false)
+      expect(f(pack('a', nil), nil)).to_be(true)
+  - it ignores holes by default:
+      expect(f(pack(nil, nil))).to_be(false)
+  - it uses a plain function as a predicate:
+      expect(f({1, 2, 3}, function(e) return e > 2 end)).to_be(true)
+      expect(f({1, 2, 3}, function(e) return e > 3 end)).to_be(false)
+  - it compares items with any other value:
+      expect(f({1, 2, 3}, 2)).to_be(true)
+      expect(f({1, 2, 3}, 4)).to_be(false)
+  - it tests the results of an iterator function:
+      expect(f(('a b'):gmatch '%a', 'b')).to_be(true)
+  - it stops at the first item that passes:
+      n = 0
+      f({1, 2, 3}, function(e) n = n + 1 return e == 1 end)
+      expect(n).to_be(1)
+
+
+- describe tabulate:
+  - before:
+      f = M.tabulate
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.tabulate(table|function, callable)', f)
+  - it accepts a lambda:
+      expect(f({'a', 'b'}, M.lambda '=_1, _1 .. "x"')).
+         to_equal {a='ax', b='bx'}
+
+  - it works with an empty table:
+      expect(f({}, M.id)).to_equal {}
+  - it makes a table from the keys and values returned:
+      expect(f({'a', 'b'}, function(e) return e, e .. 'x' end)).
+         to_equal {a='ax', b='bx'}
+  - it inverts a table with iter:
+      expect(f(M.iter(pairs {'x', 'y'}), function(k, v) return v, k end)).
+         to_equal {x=1, y=2}
+  - it leaves out items with a nil key:
+      expect(f({1, 2, 3}, function(e) if e ~= 2 then return e, true end end)).
+         to_equal {[1]=true, [3]=true}
+  - it stores false values:
+      expect(f({1}, function(e) return e, false end)).to_equal {[1]=false}
+  - it lets a later key replace an earlier one:
+      expect(f({1, 2}, function(e) return 'k', e end)).to_equal {k=2}
+  - it tabulates the results of an iterator function:
+      expect(f(('a b'):gmatch '%a', function(e) return e, true end)).
+         to_equal {a=true, b=true}
+  - it passes all iteration results to the function:
+      expect(f(M.iter(ipairs {'a', 'b'}), M.id)).to_equal {'a', 'b'}
 
 
 - describe zip:

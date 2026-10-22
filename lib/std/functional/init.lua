@@ -42,13 +42,16 @@ end
 
 
 -- Call visit with all the results of each item of an iterable, until
--- visit returns something truthy.  A table's items are its values from 1
--- to its `n` field or length, so holes are visited; an iterator
--- function's items end with its first nil result.
+-- visit returns something truthy, and then return true.  A table's items
+-- are its values from 1 to its `n` field or length, so holes are
+-- visited; an iterator function's items end with its first nil result.
 local function each(seq, visit)
    if type(seq) == 'function' then
       local function loop(...)
-         if ... ~= nil and not visit(...) then
+         if ... ~= nil then
+            if visit(...) then
+               return true
+            end
             return loop(seq())
          end
       end
@@ -56,9 +59,14 @@ local function each(seq, visit)
    end
    for i = 1, seq.n or len(seq) do
       if visit(seq[i]) then
-         return
+         return true
       end
    end
+end
+
+
+local function isnonnil(x)
+   return x ~= nil
 end
 
 
@@ -224,6 +232,11 @@ local function cond(expr, branch, ...)
 end
 
 
+local function contains(seq, x)
+   return each(seq, topredicate(x)) == true
+end
+
+
 local function curry(fn, n)
    if n <= 1 then
       return fn
@@ -235,17 +248,37 @@ local function curry(fn, n)
 end
 
 
-local function filter(seq, pred)
-   pred = topredicate(pred)
-   local r, n = {}, 0
-   each(seq, function(...)
+-- A function to list the items of an iterable that pass a predicate, or
+-- those that fail it.
+local function keeper(passes)
+   return function(seq, pred)
+      pred = topredicate(pred)
+      local r, n = {}, 0
+      each(seq, function(...)
+         if not pred(...) == not passes then
+            n = n + 1
+            r[n] = (...)
+         end
+      end)
+      r.n = n
+      return r
+   end
+end
+
+local filter, reject = keeper(true), keeper(false)
+
+
+local function detect(seq, pred, fn)
+   pred = topredicate(default(pred, isnonnil))
+   local found
+   local function test(...)
       if pred(...) then
-         n = n + 1
-         r[n] = (...)
+         found = ...
+         return true
       end
-   end)
-   r.n = n
-   return r
+   end
+   each(seq, fn and function(...) return test(fn(...)) end or test)
+   return found
 end
 
 
@@ -265,6 +298,23 @@ local function foldl(seq, acc, fn)
       end
    end)
    return acc
+end
+
+
+local function partition(seq, pred)
+   pred = topredicate(pred)
+   local pass, fail, np, nf = {}, {}, 0, 0
+   each(seq, function(...)
+      if pred(...) then
+         np = np + 1
+         pass[np] = (...)
+      else
+         nf = nf + 1
+         fail[nf] = (...)
+      end
+   end)
+   pass.n, fail.n = np, nf
+   return pass, fail
 end
 
 
@@ -395,6 +445,15 @@ local function map(seq, fn)
 end
 
 
+local function mapvalues(t, fn)
+   local r = {}
+   for k, v in next, t do
+      r[k] = fn(v)
+   end
+   return r
+end
+
+
 local function map_with(tt, fn)
    local r = {}
    for k, v in next, tt do
@@ -475,6 +534,23 @@ local function shape(t, dims)
       end
    end
    return(fill(1, 1))
+end
+
+
+local function some(seq, ...)
+   return each(seq, topredicate(given(id, ...))) == true
+end
+
+
+local function tabulate(seq, fn)
+   local r = {}
+   each(seq, function(...)
+      local k, v = fn(...)
+      if k ~= nil then
+         r[k] = v
+      end
+   end)
+   return r
 end
 
 
@@ -601,6 +677,21 @@ return {
    --   end
    cond = cond, -- any number of any type arguments!
 
+   --- Whether any item of an iterable matches a value or predicate.
+   -- Anything but a plain function is compared with each item, as `==`,
+   -- so `contains(t, nil)` asks whether *t* has a hole.  Use
+   -- @{predicate} to call a functable.  Deep equality is
+   -- `bind(operator.eqv, {x})`.
+   -- @function contains
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param x a value to compare with, or a predicate function
+   -- @treturn boolean `true` if any item matches, otherwise `false`
+   -- @see some
+   -- @usage
+   --   --> true
+   --   contains({'a', 'b', 'c'}, 'b')
+   contains = X('contains(table|function, ?any)', contains),
+
    --- Curry a function.
    -- @function curry
    -- @func fn function to curry
@@ -624,6 +715,27 @@ return {
    -- @usage
    --   cmp = default(cmp, function(a, b) return a < b end)
    default = X('default(?any, [?any])', default),
+
+   --- Find the first item of an iterable that passes a predicate.
+   -- With *fn*, each item is mapped to the results of *fn* lazily, and
+   -- the first of the first results that pass is returned, so *fn* is
+   -- not called for items after it.  The predicate is called with all
+   -- the results of an iteration.  If *pred* is omitted or nil, it
+   -- passes anything that is not nil.
+   -- @function detect
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param[opt] pred a predicate function, or a value to compare with
+   -- @func[opt] fn map function
+   -- @return the first item, or result of *fn*, that passes, or `nil`
+   --    if there isn't one
+   -- @see filter
+   -- @see predicate
+   -- @usage
+   --   --> 'b'
+   --   detect({'a', 'b', 'c'}, function(e) return e > 'a' end)
+   --   --> 4, without calling `parse` for items after 4
+   --   detect(args, nil, parse)
+   detect = X('detect(table|function, [?any], [callable])', detect),
 
    --- Filter the items of an iterable with a predicate.
    -- Only a plain function is a predicate; anything else, a functable
@@ -768,6 +880,20 @@ return {
    --   conc {{1, 2, 3}, {4, 5}}, conc {a={1, 2, 3, x='y'}, b={4, 5, z=6}}
    map_with = X('map_with(table of tables, callable)', map_with),
 
+   --- Map a function over the values of a table.
+   -- Keys are kept.  The result of *fn* is stored as it is, so a value can
+   -- map to `false`; return the value itself to pass it through, and
+   -- return nil to leave the key out of the result.
+   -- @function mapvalues
+   -- @tparam table t a table
+   -- @func fn map function, called with each value
+   -- @treturn table a new table of the same keys, and the results of *fn*
+   -- @see map
+   -- @usage
+   --   --> {a=2, b=4}
+   --   mapvalues({a=1, b=2}, lambda '=_1 * 2')
+   mapvalues = X('mapvalues(table, callable)', mapvalues),
+
    --- Memoize a function, by wrapping it in a functable.
    --
    -- To ensure that memoize always returns the same results for the same
@@ -802,6 +928,20 @@ return {
    --   map(product({0,1}, {0, 1}, {0, 1}), table.concat)
    product = X('product(list...)', product),
 
+   --- Split the items of an iterable by a predicate.
+   -- @function partition
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param pred a predicate function, or a value to compare with
+   -- @treturn table a list of the items that pass, with its length in
+   --    field `n`
+   -- @treturn table a list of the items that fail, likewise
+   -- @see filter
+   -- @see reject
+   -- @usage
+   --   --> {2, 4, n=2}, {1, 3, n=2}
+   --   partition({1, 2, 3, 4}, function(e) return e % 2 == 0 end)
+   partition = X('partition(table|function, ?any)', partition),
+
    --- Make a predicate from a value, a function or a functable.
    -- A plain function is returned as is, and a @{lambda} is unwrapped to
    -- the function inside it, so that its source string can no longer be
@@ -825,6 +965,20 @@ return {
    --   is_five(5), is_five(6) --> true, false
    --   is_even = predicate(lambda '|e| e % 2 == 0')
    predicate = X('predicate(?any)', predicate),
+
+   --- Reject the items of an iterable that pass a predicate.
+   -- The opposite of @{filter}.
+   -- @function reject
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param pred a predicate function, or a value to compare with
+   -- @treturn table a list of the items that fail, with its length in
+   --    field `n`
+   -- @see filter
+   -- @see partition
+   -- @usage
+   --   --> {1, 3, n=2}
+   --   reject({1, 2, 3, 4}, function(e) return e % 2 == 0 end)
+   reject = X('reject(table|function, ?any)', reject),
 
    --- Shape a table according to a list of dimensions.
    --
@@ -850,6 +1004,34 @@ return {
    --   --> {{'a', 'b'}, {'c', 'd'}, {'e', 'f'}}
    --   shape({'a', 'b', 'c', 'd', 'e', 'f'}, {3, 2})
    shape = X('shape(table, table)', shape),
+
+   --- Whether any item of an iterable passes a predicate.
+   -- If *pred* is omitted, it passes anything truthy.
+   -- An explicit `nil`, unlike leaving *pred* out, is compared with the
+   -- items, as for @{contains}.
+   -- @function some
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param[opt] pred a predicate function, or a value to compare with
+   -- @treturn boolean `true` if any item passes, otherwise `false`
+   -- @see contains
+   -- @usage
+   --   --> true
+   --   some({false, 'x'})
+   some = X('some(table|function, [?any])', some),
+
+   --- Make a table from the key and value results of a function.
+   -- Items for which *fn* returns a nil key are left out, and a later
+   -- result for a key replaces an earlier one.
+   -- @function tabulate
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @func fn function called with all the results of an iteration, to
+   --    return a key and a value
+   -- @treturn table a table of the keys and values from *fn*
+   -- @see map
+   -- @usage
+   --   --> {a=1, b=2}
+   --   tabulate(iter(pairs {1, 2}), function(i, v) return ({'a', 'b'})[i], v end)
+   tabulate = X('tabulate(table|function, callable)', tabulate),
 
    --- Zip a table of tables.
    -- Make a new table, with lists of elements at the same index in the

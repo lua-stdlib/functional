@@ -28,6 +28,12 @@
   - New `default` returns its first argument unless it is nil, for an
     optional argument.
 
+  - New `reject`, `partition`, `detect`, `contains` and `some` work with
+    predicates, that can be plain values to compare with, such as
+    `contains(t, nil)` to ask whether `t` has a hole.  New `mapvalues`
+    maps the values of a table, and `tabulate` makes a table from the
+    keys and values that a function returns.
+
 ### Bug fixes
 
   - `map` passes every result of every iteration to its function, even
