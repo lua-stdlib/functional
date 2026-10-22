@@ -407,15 +407,21 @@ specify functional:
       expect(f({'a', 'b', 'a'}, 'b')).to_be 'b'
   - it returns nil if no item passes:
       expect(f({1, 2}, function(e) return e > 2 end)).to_be(nil)
-  - it defaults to the first item that is not nil:
-      expect(f(pack(nil, false, 3))).to_be(false)
+  - it defaults to the first truthy item:
+      expect(f(pack(nil, false, 3))).to_be(3)
       expect(f(pack(nil, nil, 3), nil)).to_be(3)
+      expect(f {false, 'x'}).to_be 'x'
+      expect(f {false}).to_be(nil)
+  - it finds false by comparing with it:
+      expect(f({1, false, 2}, false)).to_be(false)
   - it finds the first result of a map function that passes:
       expect(f({1, 2, 3, 4}, function(r) return r > 4 end, M.lambda '=_1 * 2')).
          to_be(6)
-  - it defaults to the first result of a map function that is not nil:
+  - it defaults to the first truthy result of a map function:
       expect(f({1, 2, 3}, nil, function(e) if e > 1 then return e * 2 end end)).
          to_be(4)
+      expect(f({1, 2, 3}, nil, function(e) return e > 1 and e or false end)).
+         to_be(2)
   - it does not call the map function after a result passes:
       n = 0
       f({1, 2, 3}, nil, function(e) n = n + 1 return e end)

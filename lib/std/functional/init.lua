@@ -373,7 +373,9 @@ end
 
 
 local function detect(seq, pred, fn)
-   return (dropuntil(seq, default(pred, isnonnil), default(fn, id)))
+   pred = default(pred, id)
+   fn = default(fn, id)
+   return (dropuntil(seq, pred, fn))
 end
 
 
@@ -754,9 +756,10 @@ return {
    -- With *fn*, each item is mapped to the results of *fn* lazily, and
    -- the first of the first results that pass is returned, so *fn* is
    -- not called for items after it, as with @{dropuntil}, but with only
-   -- the first of the passing call's results.  The predicate is called with all
-   -- the results of an iteration.  If *pred* is omitted or nil, it
-   -- passes anything that is not nil.
+   -- the first of the passing call's results.  The predicate is called
+   -- with all the results of an iteration.  If *pred* is omitted or nil,
+   -- it passes anything truthy, as in @{some}, where @{dropuntil} passes
+   -- anything that is not nil: use `detect(seq, false)` to find `false`.
    -- @function detect
    -- @tparam table|function seq an iterable, see @{collect}
    -- @param[opt] pred a predicate function, or a value to compare with
