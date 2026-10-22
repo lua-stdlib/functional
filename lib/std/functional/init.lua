@@ -37,6 +37,7 @@ local _ENV = require 'std.normalize' {
    'math.ceil',
    'std.functional._base.argscheck',
    'std.functional._base.serialize',
+   'string.format',
    'table.concat',
    'table.remove',
 }
@@ -355,6 +356,21 @@ end
 
 local function id(...)
    return ...
+end
+
+
+local function converge(x, limit, fn)
+   if fn == nil then
+      limit, fn = 1000, limit
+   end
+   for _ = 1, limit do
+      local r = fn(x)
+      if r == x then
+         return x
+      end
+      x = r
+   end
+   error(format('no convergence after %d calls', limit), 2)
 end
 
 
@@ -1122,7 +1138,9 @@ return {
    tabulate = X('tabulate(table|function, callable)', tabulate),
 
    --- The values of a table.
-   -- Like `table.keys` in std.normalize, the order is not specified.
+   -- Like `table.keys` in std.normalize, the order is not specified, and
+   -- every field is a value, so the `n` field of a list with a length is
+   -- one too: use @{collect} to list the items of a list.
    -- @function values
    -- @tparam table t a table
    -- @treturn table a list of the values of *t*, with its length in
@@ -1174,6 +1192,21 @@ return {
    --   vpairs = compose(table.invert, ipairs)
    --   for v, i in vpairs {'a', 'b', 'c'} do process(v, i) end
    compose = X('compose(callable...)', compose),
+
+   --- Call a function with a value, and then with each result, until the
+   -- result is the same as the value it was called with.
+   -- @function converge
+   -- @signature converge(?any, [int], callable)
+   -- @param x a value
+   -- @int[opt=1000] limit most calls of *fn* to make
+   -- @func fn function to call with *x*, and with each result
+   -- @return the first value that *fn* returns unchanged
+   -- @raise error `no convergence after N calls` if *fn* still changes
+   --   its result after *limit* calls
+   -- @usage
+   --   --> 'a'
+   --   converge('aaa', function(s) return (s:gsub('aa', 'a')) end)
+   converge = X('converge(?any, [int], callable)', converge),
 
    --- Curry a function.
    -- @function curry

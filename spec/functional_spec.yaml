@@ -7,12 +7,12 @@ before:
 
    exported_apis = {
       'any', 'bind', 'callable', 'case', 'collect', 'compose', 'cond',
-      'contains', 'curry', 'default', 'detect', 'each', 'either', 'except',
-      'filter', 'firstof', 'flatten', 'foldl', 'foldr', 'id', 'invert',
-      'ireverse', 'isempty', 'iter', 'lambda', 'map', 'map_with', 'mapkeys',
-      'mapvalues', 'memoize', 'nop', 'partition', 'pluck', 'predicate',
-      'product', 'reject', 'shape', 'some', 'tabulate', 'values', 'zip',
-      'zip_with',
+      'contains', 'converge', 'curry', 'default', 'detect', 'each', 'either', 'except',
+      'filter', 'firstof', 'flatten', 'foldl', 'foldr', 'id',
+      'invert', 'ireverse', 'isempty', 'iter', 'lambda', 'map', 'map_with',
+      'mapkeys', 'mapvalues', 'memoize', 'nop', 'partition', 'pluck',
+      'predicate', 'product', 'reject', 'shape', 'some', 'tabulate', 'values',
+      'zip', 'zip_with',
    }
 
    M = require(this_module)
@@ -596,6 +596,57 @@ specify functional:
       end)).to_be(2)
   - it iterates over a table with holes:
       expect(f(pack(nil, 'x'), function(e) return e end)).to_be 'x'
+
+
+- describe converge:
+  - before:
+      f = M.converge
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.converge(?any, [int], callable)', f)
+  - it accepts a lambda:
+      expect(f('aaa', M.lambda '=(_:gsub("aa", "a"))')).to_be 'a'
+
+  - it returns its argument if the function changes nothing:
+      expect(f('a', M.id)).to_be 'a'
+  - it calls the function again with each result, until one changes nothing:
+      expect(f(10, function(n) return n > 1 and math.floor(n / 2) or n end)).to_be(1)
+      expect(f('aaa', function(s) return (s:gsub('aa', 'a')) end)).to_be 'a'
+  - it calls the function once more than it changes the argument:
+      calls = 0
+      f(3, function(n) calls = calls + 1; return n > 1 and n - 1 or n end)
+      expect(calls).to_be(3)
+  - it can start from nil:
+      expect(f(nil, M.id)).to_be(nil)
+  - it gives up after 1000 calls by default:
+      calls = 0
+      expect(f(0, function(n) calls = calls + 1; return n + 1 end)).
+         to_raise 'no convergence after 1000 calls'
+      expect(calls).to_be(1000)
+  - it gives up after the limit, if given one:
+      expect(f(0, 5, function(n) return n + 1 end)).
+         to_raise 'no convergence after 5 calls'
+  - it detects an oscillation:
+      expect(f(1, function(n) return -n end)).to_raise 'no convergence'
+  - it converges within the limit, if given one:
+      expect(f(3, 4, function(n) return n > 1 and n - 1 or n end)).to_be(1)
+
+
+- describe flatten:
+  - before:
+      t = {{{'one'}}, 'two', {{'three'}, 'four'}}
+
+      f = M.flatten
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.flatten(table)', f)
+
+  - it returns a table:
+      expect(type(f(t))).to_be 'table'
+  - it works for an empty table:
+      expect(f {}).to_equal {n=0}
+  - it flattens a nested table:
+      expect(f(t)).to_equal {n=4, 'one', 'two', 'three', 'four'}
 
 
 - describe foldl:

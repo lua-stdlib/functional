@@ -79,6 +79,11 @@
     table of just some of the entries of a table, `except` one without
     the keys that match, and `values` lists the values.
 
+  - New `converge` calls a function with a value, and then with each
+    result, until the result is the same as its argument.  It raises an
+    error if that has not happened after 1000 calls, or after the limit
+    that it is given instead.
+
   - New `isempty` says whether a table has nothing in it, and `either`
     returns its first argument unless it is nil or empty, where `x or
     default` only looks for `nil` and `false`.
