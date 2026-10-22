@@ -32,7 +32,7 @@ local _ENV = require 'std.normalize' {
 -- visit returns something truthy, and then return true.  A table's items
 -- are its values from 1 to its `n` field or length, so holes are
 -- visited; an iterator function's items end with its first nil result.
-local function each(seq, visit)
+local function walk(seq, visit)
    if type(seq) == 'function' then
       local function loop(...)
          if ... ~= nil then
@@ -74,7 +74,7 @@ end
 local function flatiter(t)
    local function visit(n)
       if type(n) == 'table' then
-         each(n, visit)
+         walk(n, visit)
       else
          yield(n)
       end
@@ -204,7 +204,7 @@ end
 
 local function collect(seq)
    local r, n = {}, 0
-   each(seq, function(item)
+   walk(seq, function(item)
       n = n + 1
       r[n] = item
    end)
@@ -238,7 +238,7 @@ end
 
 
 local function contains(seq, x)
-   return each(seq, topredicate(x)) == true
+   return walk(seq, topredicate(x)) == true
 end
 
 
@@ -259,7 +259,7 @@ local function keeper(passes)
    return function(seq, pred)
       pred = topredicate(pred)
       local r, n = {}, 0
-      each(seq, function(...)
+      walk(seq, function(...)
          if not pred(...) == not passes then
             n = n + 1
             r[n] = (...)
@@ -273,20 +273,6 @@ end
 local filter, reject = keeper(true), keeper(false)
 
 
-local function detect(seq, pred, fn)
-   pred = topredicate(default(pred, isnonnil))
-   local found
-   local function test(...)
-      if pred(...) then
-         found = ...
-         return true
-      end
-   end
-   each(seq, fn and function(...) return test(fn(...)) end or test)
-   return found
-end
-
-
 local function flatten(t)
    return collect(flatiter(t))
 end
@@ -296,7 +282,7 @@ local function foldl(seq, acc, fn)
    if fn == nil then
       fn, acc = acc, {}
    end
-   each(seq, function(...)
+   walk(seq, function(...)
       local r = fn(acc, ...)
       if r ~= nil then
          acc = r
@@ -309,7 +295,7 @@ end
 local function partition(seq, pred)
    pred = topredicate(pred)
    local pass, fail, np, nf = {}, {}, 0, 0
-   each(seq, function(...)
+   walk(seq, function(...)
       if pred(...) then
          np = np + 1
          pass[np] = (...)
@@ -355,6 +341,39 @@ end
 
 local function id(...)
    return ...
+end
+
+
+local function each(seq, fn)
+   walk(seq, function(...)
+      fn(...)
+   end)
+end
+
+
+local function dropuntil(seq, pred, fn)
+   if fn == nil then
+      pred, fn = isnonnil, pred
+   end
+   pred = topredicate(pred)
+   local found
+   local function test(...)
+      if pred(...) then
+         found = pack(...)
+         return true
+      end
+   end
+   walk(seq, function(...)
+      return test(fn(...))
+   end)
+   if found then
+      return unpack(found, 1, found.n)
+   end
+end
+
+
+local function detect(seq, pred, fn)
+   return (dropuntil(seq, default(pred, isnonnil), default(fn, id)))
 end
 
 
@@ -441,7 +460,7 @@ end, id)
 
 local function map(seq, fn)
    local r, n = {}, 0
-   each(seq, function(...)
+   walk(seq, function(...)
       n = n + 1
       r[n] = (fn(...))
    end)
@@ -544,13 +563,13 @@ end
 
 
 local function some(seq, ...)
-   return each(seq, topredicate(given(id, ...))) == true
+   return walk(seq, topredicate(given(id, ...))) == true
 end
 
 
 local function tabulate(seq, fn)
    local r = {}
-   each(seq, function(...)
+   walk(seq, function(...)
       local k, v = fn(...)
       if k ~= nil then
          r[k] = v
@@ -734,7 +753,8 @@ return {
    --- Find the first item of an iterable that passes a predicate.
    -- With *fn*, each item is mapped to the results of *fn* lazily, and
    -- the first of the first results that pass is returned, so *fn* is
-   -- not called for items after it.  The predicate is called with all
+   -- not called for items after it, as with @{dropuntil}, but with only
+   -- the first of the passing call's results.  The predicate is called with all
    -- the results of an iteration.  If *pred* is omitted or nil, it
    -- passes anything that is not nil.
    -- @function detect
@@ -743,6 +763,7 @@ return {
    -- @func[opt] fn map function
    -- @return the first item, or result of *fn*, that passes, or `nil`
    --    if there isn't one
+   -- @see dropuntil
    -- @see filter
    -- @see predicate
    -- @usage
@@ -751,6 +772,40 @@ return {
    --   --> 4, without calling `parse` for items after 4
    --   detect(args, nil, parse)
    detect = X('detect(table|function, [?any], [callable])', detect),
+
+   --- Call a function with each item of an iterable, until a result passes.
+   -- *fn* is called with all the results of an iteration, and the
+   -- predicate with all the results of that call.  The call, and so the
+   -- iteration, stops at the first call that passes, and all its results
+   -- are returned, whereas @{detect} returns only the first.  If *pred*
+   -- is omitted, it passes anything that is not nil.
+   -- An explicit `nil` for *pred*, unlike leaving it out, is compared with
+   -- the results.
+   -- @function dropuntil
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @param[opt] pred a predicate function, or a value to compare with
+   -- @func fn function to call with each item
+   -- @return all the results of the first call of *fn* that passes, or
+   --    nothing if there isn't one
+   -- @see detect
+   -- @see some
+   -- @usage
+   --   --> 'two', 2: parse is not called for items after 2
+   --   dropuntil({1, 2, 3}, function(e) if e == 2 then return 'two', e end end)
+   --   dropuntil(files, lambda '=_1 ~= "."', open)
+   dropuntil = X('dropuntil(table|function, [?any], callable)', dropuntil),
+
+   --- Call a function with each item of an iterable, for its effects.
+   -- The function is called with all the results of an iteration, and
+   -- every item is visited, whatever it returns.  Use @{some} or
+   -- @{dropuntil} to stop early.
+   -- @function each
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @func fn function called with each item
+   -- @see map
+   -- @usage
+   --   each(args, function(arg) print(arg) end)
+   each = X('each(table|function, callable)', each),
 
    --- Filter the items of an iterable with a predicate.
    -- Only a plain function is a predicate; anything else, a functable

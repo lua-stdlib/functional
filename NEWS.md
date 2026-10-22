@@ -40,6 +40,10 @@
 
   - `case` matches strings against `{pattern, branch}` pairs.
 
+  - New `each` calls a function with every item, for its effects, and
+    `dropuntil` returns every result of the first call of a function
+    that passes.
+
 ### Bug fixes
 
   - `map` passes every result of every iteration to its function, even
