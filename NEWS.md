@@ -16,6 +16,10 @@
   - `map` passes every result of every iteration to its function, even
     when an iterator returns `nil` before its last result.
 
+  - `operator.concat` honours a `__concat` metamethod of either
+    argument, like the `..` operator, instead of always concatenating
+    the stringified arguments.
+
 
 ## Noteworthy changes in release 1.0 (2026-07-26) [stable]
 

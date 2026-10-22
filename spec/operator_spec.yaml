@@ -41,6 +41,12 @@ specify functional.operator:
       expect(f('', 2)).to_be '2'
   - it concatenates its arguments:
       expect(f(1, 2)).to_be '12'
+  - it honours a __concat metamethod of either argument: |
+      mt = {__concat = function(a, b) return 'concat' end}
+      expect(f(setmetatable({}, mt), 'x')).to_be 'concat'
+      expect(f('x', setmetatable({}, mt))).to_be 'concat'
+  - it stringifies arguments without a __concat metamethod: |
+      expect(f({}, '')).to_match '^table: '
 
 
 - describe len:

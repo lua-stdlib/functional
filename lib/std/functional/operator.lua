@@ -37,15 +37,22 @@ end
 
 
 return {
-   --- Stringify and concatenate arguments.
+   --- Concatenate arguments, like the `..` operator.
+   -- When neither argument has a `__concat` metamethod, stringify both
+   -- first, so that any values can be concatenated.
    -- @param a an argument
    -- @param b another argument
-   -- @return concatenation of stringified arguments.
+   -- @return result of `a .. b` if either argument has a `__concat`
+   --    metamethod, otherwise concatenation of stringified arguments.
    -- @usage
    --   --> '=> 1000010010'
    --   foldl(concat, '=> ', {10000, 100, 10})
    concat = function(a, b)
-     return tostring(a) .. tostring(b)
+      local ma, mb = getmetatable(a), getmetatable(b)
+      if ma and ma.__concat or mb and mb.__concat then
+         return a .. b
+      end
+      return tostring(a) .. tostring(b)
    end,
 
    --- Equivalent to `#` operation, but respecting `__len` even on Lua 5.1.
