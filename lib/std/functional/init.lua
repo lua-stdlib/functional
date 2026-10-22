@@ -341,16 +341,12 @@ local function partition(seq, pred)
 end
 
 
--- Be careful to reverse only the valid sequence part of a table.
-local function ireverse(t)
-   local oob = 1
-   while t[oob] ~= nil do
-      oob = oob + 1
-   end
-
-   local r = {}
-   for i = 1, oob - 1 do
-      r[oob - i] = t[i]
+local function reversed(seq)
+   local items = collect(seq)
+   local n = items.n
+   local r = {n = n}
+   for i = 1, n do
+      r[n - i + 1] = items[i]
    end
    return r
 end
@@ -884,22 +880,6 @@ return {
    --   foldr({10000, 100}, 10, operator.quot) == 10000 / (100 / 10)
    foldr = X('foldr(table|function, [any], callable)', foldr),
 
-   --- Return a new sequence with element order reversed.
-   --
-   -- Apart from the order of the elements returned, this function follows
-   -- the same rules as @{ipairs} for determining first and last elements.
-   -- @function ireverse
-   -- @signature ireverse(table)
-   -- @tparam table t a table
-   -- @treturn table a new table with integer keyed elements in reverse
-   --    order with respect to *t*
-   -- @see ipairs
-   -- @usage
-   --   --> bar
-   --   --> foo
-   --   map(ireverse {'foo', 'bar', [4]='baz', d=5}, print)
-   ireverse = X('ireverse(table)', ireverse),
-
    --- Make an iterator function from a generic-for triple.
    -- Each call passes on all of the results of the next iteration, and
    -- they are nil once the iterator is exhausted.  Use it to pass a
@@ -988,6 +968,19 @@ return {
    --   --> {1, 3, n=2}
    --   reject({1, 2, 3, 4}, function(e) return e % 2 == 0 end)
    reject = X('reject(table|function, ?any)', reject),
+
+   --- The items of an iterable in the opposite order.
+   -- Unlike `ipairs`, this keeps the holes in a table, so the position
+   -- of each item is as far from the end as it was from the start.
+   -- @function reversed
+   -- @signature reversed(table|function)
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @treturn table a new list of the items in reverse order, with its
+   --    length in field `n`
+   -- @usage
+   --   --> {'c', 'b', 'a', n=3}
+   --   reversed {'a', 'b', 'c'}
+   reversed = X('reversed(table|function)', reversed),
 
    --- Shape a table according to a list of dimensions.
    --

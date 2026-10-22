@@ -10,6 +10,10 @@
     that name, and only gives you this one when lua-stdlib is not
     installed.
 
+  - `ireverse` is replaced by `reversed`, which takes an iterable, and
+    keeps the holes in a table where `ireverse` stopped at the first.
+    lua-stdlib 42 still has `std.ireverse`.
+
   - Functions that iterate take their data first and their function
     last, as `table.sort` and `string.gsub` do.  The data is an
     _iterable_: a table, whose items are its values from 1 to its `n`
@@ -52,6 +56,7 @@
     | `cond(expr, branch, ...)`                    | `cond({expr, branch}, ...)`          |
     | `map_with(fn, tt)`, `zip_with(fn, tt)`       | `map_with(tt, fn)`, `zip_with(tt, fn)` |
     | `shape(dims, t)`                             | `shape(t, dims)`                     |
+    | `ireverse(t)`                                | `reversed(iterable)`                 |
 
 ### New features
 

@@ -9,9 +9,10 @@ before:
       'any', 'bind', 'callable', 'case', 'collect', 'compose', 'cond',
       'contains', 'converge', 'curry', 'default', 'detect', 'each', 'either', 'except',
       'filter', 'firstof', 'flatmap', 'flatten', 'foldl', 'foldr',
-      'id', 'indexof', 'invert', 'ireverse', 'isempty', 'iter', 'lambda',
+      'id', 'indexof', 'invert', 'isempty', 'iter', 'lambda',
       'map', 'map_with', 'mapkeys', 'mapvalues', 'memoize', 'nop',
-      'partition', 'pluck', 'predicate', 'product', 'reject', 'shape', 'some',
+      'partition', 'pluck', 'predicate', 'product', 'reject', 'reversed', 'shape',
+      'some',
       'sorted', 'tabulate', 'values', 'zip', 'zip_with',
    }
 
@@ -766,35 +767,6 @@ specify functional:
          to_equal(pack(nil, nil, 3, 4, nil, nil))
 
 
-- describe ireverse:
-  - before: |
-      __index = setmetatable({ content = 'a string' }, {
-         __index = function(t, n)
-            if n <= #t.content then
-               return t.content:sub(n, n)
-            end
-         end,
-         __len   = function(t) return #t.content end,
-      })
-
-      f = M.ireverse
-
-  - context with bad arguments:
-      badargs.diagnose('std.functional.ireverse(table)', f)
-
-  - it returns a new list:
-      t = {1, 2, 5}
-      expect(f(t)).not_to_be(t)
-  - it reverses the elements relative to the original list:
-      expect(f {1, 2, 'five'}).to_equal {'five', 2, 1}
-  - it ignores the dictionary part of a table:
-      expect(f {1, 2, 'five'; a = 'b', c = 'd'}).to_equal {'five', 2, 1}
-  - it respects __len metamethod:
-      expect(f(__index)).to_equal {'g', 'n', 'i', 'r', 't', 's', ' ', 'a'}
-  - it works for an empty list:
-      expect(f {}).to_equal {}
-
-
 - describe indexof:
   - before:
       f = M.indexof
@@ -1323,6 +1295,29 @@ specify functional:
       expect(f(pack('a', nil, 'c'), 'a')).to_equal {n=2, [2]='c'}
   - it rejects from the results of an iterator function:
       expect(f(('a b c'):gmatch '%a', 'b')).to_equal {n=2, 'a', 'c'}
+
+
+- describe reversed:
+  - before:
+      f = M.reversed
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.reversed(table|function)', f)
+
+  - it returns a new list:
+      t = {1, 2, 5}
+      expect(f(t)).not_to_be(t)
+  - it reverses the items relative to the original list:
+      expect(f {1, 2, 'five'}).to_equal(pack('five', 2, 1))
+  - it ignores the dictionary part of a table:
+      expect(f {1, 2, 'five'; a = 'b', c = 'd'}).to_equal(pack('five', 2, 1))
+  - it keeps holes in a table:
+      expect(f(pack(nil, 'a', nil))).to_equal(pack(nil, 'a', nil))
+      expect(f(pack('a', nil, nil, 'd'))).to_equal(pack('d', nil, nil, 'a'))
+  - it works for an empty list:
+      expect(f {}).to_equal(pack())
+  - it reverses the items of an iterator function:
+      expect(f(('abc'):gmatch '.')).to_equal(pack('c', 'b', 'a'))
 
 
 - describe shape:
