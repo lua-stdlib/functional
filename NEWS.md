@@ -1,7 +1,5 @@
 # std.functional NEWS - User visible changes
 
-## Noteworthy changes in release ?.? (????-??-?) [?]
-
 
 ## Noteworthy changes in release 2 (2026-10-22) [stable]
 

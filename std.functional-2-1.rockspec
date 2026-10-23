@@ -1,4 +1,4 @@
-local _MODREV, _SPECREV = 'dev', '-1'
+local _MODREV, _SPECREV = '2', '-1'
 
 package = 'std.functional'
 version = _MODREV .. _SPECREV
