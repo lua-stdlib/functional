@@ -6,7 +6,7 @@ before:
    global_table = '_G'
 
    exported_apis = {
-      'any', 'bind', 'callable', 'case', 'choose', 'collect', 'compose', 'cond',
+      'any', 'bind', 'callable', 'case', 'choose', 'collect', 'compact', 'compose', 'cond',
       'contains', 'converge', 'curry', 'default', 'detect', 'each', 'either', 'except',
       'filter', 'firstof', 'flatmap', 'flatten', 'foldl', 'foldr',
       'id', 'indexof', 'invert', 'iscallable', 'isempty', 'iter', 'lambda',
@@ -717,6 +717,33 @@ specify functional:
   - it passes all the results of an iteration to the function:
       expect(f(M.iter(ipairs {'x', 'y'}), function(i, e) return {e .. i} end)).
          to_equal {n=2, 'x1', 'y2'}
+
+
+- describe compact:
+  - before:
+      f = M.compact
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.compact(table|function)', f)
+
+  - it works for an empty table:
+      expect(f {}).to_equal {n=0}
+  - it returns a new list:
+      t = {1, 2}
+      expect(f(t)).not_to_be(t)
+  - it leaves out nil items, wherever the holes are:
+      expect(f(pack(nil, 1, nil, 2, nil))).to_equal {n=2, 1, 2}
+      expect(f(pack(nil, nil))).to_equal {n=0}
+  - it keeps false:
+      expect(f(pack(false, nil, false))).to_equal {n=2, false, false}
+  - it keeps items that are not nil, in order:
+      expect(f {'a', 'b', 'c'}).to_equal {n=3, 'a', 'b', 'c'}
+  - it compacts an iterator function's items:
+      expect(f(('a b'):gmatch '%a')).to_equal {n=2, 'a', 'b'}
+  - it takes the first result of each iteration:
+      expect(f(M.iter(ipairs {'x', 'y'}))).to_equal {n=2, 1, 2}
+  - it drops the nils that flatten keeps:
+      expect(f(M.flatten(pack(1, nil, pack(2, nil, 3))))).to_equal {n=3, 1, 2, 3}
 
 
 - describe flatten:

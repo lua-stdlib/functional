@@ -209,6 +209,19 @@ local function collect(seq)
 end
 
 
+local function compact(seq)
+   local r, n = {}, 0
+   walk(seq, function(item)
+      if item ~= nil then
+         n = n + 1
+         r[n] = item
+      end
+   end)
+   r.n = n
+   return r
+end
+
+
 local function compose(...)
    local fns = pack(...)
 
@@ -790,6 +803,24 @@ return {
    --   collect(iter(ipairs {'a', 'b', 'c'}))
    collect = X('collect(table|function)', collect),
 
+   --- Collect the items of an iterable that are not nil.
+   -- Only nil is left out, so `false` is kept, as it is a value.  The
+   -- holes in a table, and the nil elements that flatten keeps, go.
+   -- @function compact
+   -- @signature compact(table|function)
+   -- @tparam table|function seq an iterable, see @{collect}
+   -- @treturn table a list of the items that are not nil, with its length
+   --    in field `n`
+   -- @see collect
+   -- @see reject
+   -- @usage
+   --   --> {1, false, 3, n=3}
+   --   compact(pack(1, nil, false, nil, 3))
+   --
+   --   --> {1, 2, 3, n=3}
+   --   compact(flatten(pack(1, nil, pack(2, nil, 3))))
+   compact = X('compact(table|function)', compact),
+
    --- Call a function with each item of an iterable, for its effects.
    -- The function is called with all the results of an iteration, and
    -- every item is visited, whatever it returns.  Use @{some} or
@@ -849,7 +880,7 @@ return {
    --   flatten {{1, {{2}, 3}, 4}, 5}
    --
    --   --> {1, 2, 3, n=3}, leaving out the elements that are nil
-   --   reject(flatten(pack(1, nil, pack(2, nil, 3))), nil)
+   --   compact(flatten(pack(1, nil, pack(2, nil, 3))))
    flatten = X('flatten(table)', flatten),
 
    --- Fold a binary function left associatively.

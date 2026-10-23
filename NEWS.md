@@ -109,6 +109,10 @@
 
   - New `iscallable` says whether a value can be called.
 
+  - New `compact` makes a list of the items of an iterable that are not
+    nil, which is what you want of the lists that `flatten` makes from
+    arguments that may be absent.
+
   - New `choose` selects one of two values by a test, like `test and
     consequent or alternative` except that either can be `false` or
     `nil`, and calls a function that it chooses.
