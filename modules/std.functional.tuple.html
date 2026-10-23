@@ -3,7 +3,7 @@
 <html>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 <head>
-    <title>functional 1.0 Reference</title>
+    <title>functional 2 Reference</title>
     <link rel="stylesheet" href="../ldoc.css" type="text/css" />
 </head>
 <body>
@@ -24,7 +24,8 @@
 
 <div id="navigation">
 <br/>
-<h1>functional 1.0</h1>
+<h1>functional 2</h1>
+
 
 <ul>
   <li><a href="../index.html">Index</a></li>
@@ -38,17 +39,17 @@
 
 
 <h2>Modules</h2>
-<ul class="$(kind=='Topics' and '' or 'nowrap'">
-  <li><a href="../modules/functional.html">functional</a></li>
-  <li><a href="../modules/functional.operator.html">functional.operator</a></li>
-  <li><strong>functional.tuple</strong></li>
+<ul class="nowrap">
+  <li><a href="../modules/std.functional.init.html">std.functional.init</a></li>
+  <li><a href="../modules/std.functional.operator.html">std.functional.operator</a></li>
+  <li><strong>std.functional.tuple</strong></li>
 </ul>
 
 </div>
 
 <div id="content">
 
-<h1>Module <code>functional.tuple</code></h1>
+<h1>Module <code>std.functional.tuple</code></h1>
 <p>Tuple container.</p>
 <p> An interned, immutable, nil-preserving tuple object.</p>
 
@@ -56,7 +57,7 @@
  with a straight-forward <code>==</code> comparison.</p>
 
 <p> The immutability guarantees only work if you don't change the contents
- of tables after adding them to a tuple.  Don't do that!</p>
+ of tables after adding them to a tuple.   Don't do that!</p>
 
 
 <h2><a href="#Objects">Objects</a></h2>
@@ -100,16 +101,17 @@
     <dd>
     Immutable Tuple container.
 
+    </ul>
 
     <h3>Fields:</h3>
     <ul>
         <li><span class="parameter">_type</span>
-            <span class="types"><a class="type" href="http://www.lua.org/manual/5.2/manual.html#6.4">string</a></span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.5/manual.html#6.5">string</a></span>
          object name
-         (<em>default</em> "Tuple")
+         (<em>default</em> 'Tuple')
         </li>
         <li><span class="parameter">n</span>
-            <span class="types"><span class="type">int</span></span>
+            <span class="types"><span class="type">integer</span></span>
          number of tuple elements
         </li>
     </ul>
@@ -119,16 +121,15 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">
- <span class="keyword">local</span> Tuple = <span class="global">require</span> <span class="string">"functional.tuple"</span>
- <span class="keyword">function</span> count (...)
-   argtuple = Tuple (...)
+        <pre class="example"><span class="keyword">local</span> Tuple = <span class="global">require</span> <span class="string">'std.functional.tuple'</span>
+<span class="keyword">function</span> <span class="function-name">count</span>(...)
+   argtuple = <span class="function-name">Tuple</span>(...)
    <span class="keyword">return</span> argtuple.n
- <span class="keyword">end</span>
- count () <span class="comment">--&gt; 0
-</span> count (<span class="keyword">nil</span>) <span class="comment">--&gt; 1
-</span> count (<span class="keyword">false</span>) <span class="comment">--&gt; 1
-</span> count (<span class="keyword">false</span>, <span class="keyword">nil</span>, <span class="keyword">true</span>, <span class="keyword">nil</span>) --&gt; <span class="number">4</span></pre>
+<span class="keyword">end</span>
+<span class="function-name">count</span>() <span class="comment">--&gt; 0
+</span><span class="function-name">count</span>(<span class="keyword">nil</span>) <span class="comment">--&gt; 1
+</span><span class="function-name">count</span>(<span class="keyword">false</span>) <span class="comment">--&gt; 1
+</span><span class="function-name">count</span>(<span class="keyword">false</span>, <span class="keyword">nil</span>, <span class="keyword">true</span>, <span class="keyword">nil</span>) <span class="comment">--&gt; 4</span></pre>
     </ul>
 
 </dd>
@@ -143,16 +144,17 @@
     <dd>
     Unpack tuple values between index <em>i</em> and <em>j</em>, inclusive.
 
+    </ul>
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">i</span>
-            <span class="types"><span class="type">int</span></span>
+            <span class="types"><span class="type">integer</span></span>
          first index to unpack
          (<em>default</em> 1)
         </li>
         <li><span class="parameter">j</span>
-            <span class="types"><span class="type">int</span></span>
+            <span class="types"><span class="type">integer</span></span>
          last index to unpack
          (<em>default</em> self.n)
         </li>
@@ -168,10 +170,9 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">
- tup = Tuple (<span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">5</span>)
- <span class="comment">--&gt; 3, 2, 5
-</span> tup (<span class="number">2</span>)</pre>
+        <pre class="example">tup = <span class="function-name">Tuple</span>(<span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">5</span>)
+<span class="comment">--&gt; 3, 2, 5
+</span><span class="function-name">tup</span>(<span class="number">2</span>)</pre>
     </ul>
 
 </dd>
@@ -182,6 +183,7 @@
     <dd>
     Return the length of this tuple.
 
+    </ul>
 
 
     <h3>Returns:</h3>
@@ -195,11 +197,10 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">
- <span class="comment">-- Only works on Lua 5.2 or newer:
-</span> #Tuple (<span class="keyword">nil</span>, <span class="number">2</span>, <span class="keyword">nil</span>) <span class="comment">--&gt; 3
-</span> <span class="comment">-- For compatibility with Lua 5.1, use <a href="../modules/functional.operator.html#len">functional.operator.len</a>
-</span> len (Tuple (<span class="keyword">nil</span>, <span class="number">2</span>, <span class="keyword">nil</span>)</pre>
+        <pre class="example"><span class="comment">-- Only works on Lua 5.2 or newer:
+</span>#<span class="function-name">Tuple</span>(<span class="keyword">nil</span>, <span class="number">2</span>, <span class="keyword">nil</span>) <span class="comment">--&gt; 3
+</span><span class="comment">-- For compatibility with Lua 5.1, use <a href="../modules/std.functional.operator.html#len">operator.len</a>
+</span><span class="function-name">len</span>(<span class="function-name">Tuple</span>(<span class="keyword">nil</span>, <span class="number">2</span>, <span class="keyword">nil</span>)</pre>
     </ul>
 
 </dd>
@@ -210,6 +211,7 @@
     <dd>
     Prevent mutation of <em>tup</em>.
 
+    </ul>
 
     <h3>Parameters:</h3>
     <ul>
@@ -235,12 +237,13 @@
     <dd>
     Return a string representation of <em>tup</em>
 
+    </ul>
 
 
     <h3>Returns:</h3>
     <ol>
 
-           <span class="types"><a class="type" href="http://www.lua.org/manual/5.2/manual.html#6.4">string</a></span>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.5/manual.html#6.5">string</a></span>
         representation of <em>tup</em>
     </ol>
 
@@ -248,9 +251,8 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">
- <span class="comment">-- 'Tuple ("nil", nil, false)'
-</span> <span class="global">print</span> (Tuple (<span class="string">"nil"</span>, <span class="keyword">nil</span>, <span class="keyword">false</span>))</pre>
+        <pre class="example"><span class="comment">-- "Tuple('nil', nil, false)"
+</span><span class="global">print</span>(<span class="function-name">Tuple</span>(<span class="string">'nil'</span>, <span class="keyword">nil</span>, <span class="keyword">false</span>))</pre>
     </ul>
 
 </dd>
@@ -260,8 +262,8 @@
 </div> <!-- id="content" -->
 </div> <!-- id="main" -->
 <div id="about">
-<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.3</a></i>
-<i style="float:right;">Last updated 2016-01-31 18:35:45 </i>
+<i>generated by <a href="http://github.com/lunarmodules/ldoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-10-22 18:10:38 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
