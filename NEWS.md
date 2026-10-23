@@ -10,6 +10,12 @@
     that name, and only gives you this one when lua-stdlib is not
     installed.
 
+  - `callable` returns *x* itself if it can be called, or `nil`, as
+    std.normalize's does, where 1.0 returned the `__call` metamethod of
+    a functable, which needs the functable as its first argument, in
+    spite of documenting a boolean.  Use the new `iscallable` for a
+    boolean.
+
   - `ireverse` is replaced by `reversed`, which takes an iterable, and
     keeps the holes in a table where `ireverse` stopped at the first.
     lua-stdlib 42 still has `std.ireverse`.
@@ -100,6 +106,8 @@
 
   - New `predicate` makes a predicate from a value, a function or a
     functable.
+
+  - New `iscallable` says whether a value can be called.
 
   - New `choose` selects one of two values by a test, like `test and
     consequent or alternative` except that either can be `false` or

@@ -9,7 +9,7 @@ before:
       'any', 'bind', 'callable', 'case', 'choose', 'collect', 'compose', 'cond',
       'contains', 'converge', 'curry', 'default', 'detect', 'each', 'either', 'except',
       'filter', 'firstof', 'flatmap', 'flatten', 'foldl', 'foldr',
-      'id', 'indexof', 'invert', 'isempty', 'iter', 'lambda',
+      'id', 'indexof', 'invert', 'iscallable', 'isempty', 'iter', 'lambda',
       'map', 'map_with', 'mapkeys', 'mapvalues', 'memoize', 'merged', 'nop',
       'partition', 'pluck', 'predicate', 'product', 'reject', 'reversed', 'shape',
       'some',
@@ -101,22 +101,44 @@ specify functional:
   - context with bad arguments:
       badargs.diagnose('std.functional.callable(<?any>)', f)
 
-  - it returns the function associated with a callable:
-      for _, v in ipairs {
-         true,
-         42,
-         'str',
-         io.stderr,
-         {},
-         M.nop,
-         setmetatable({}, {__call = M.nop}),
-      } do
-         expect(f(v)).to_be(pcall(v, {}) and M.nop or nil)
-      end
+  - it returns a function:
+      expect(f(M.nop)).to_be(M.nop)
+  - it returns a functable itself, rather than its __call metamethod:
+      functable = setmetatable({}, {__call = M.nop})
+      expect(f(functable)).to_be(functable)
   - it returns 'nil' for uncallable arguments:
       expect(f()).to_be(nil)
+      expect(f(true)).to_be(nil)
+      expect(f(42)).to_be(nil)
+      expect(f 'str').to_be(nil)
+      expect(f(io.stderr)).to_be(nil)
       expect(f {}).to_be(nil)
       expect(f '').to_be(nil)
+  - it returns nil for a metatable that is protected by a non-table:
+      expect(f(setmetatable({}, {__metatable = true}))).to_be(nil)
+
+
+- describe iscallable:
+  - before:
+      f = M.iscallable
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.iscallable(<?any>)', f)
+
+  - it returns true for a function:
+      expect(f(M.nop)).to_be(true)
+  - it returns true for a functable:
+      expect(f(setmetatable({}, {__call = M.nop}))).to_be(true)
+  - it returns true for a lambda:
+      expect(f(M.lambda '=_1')).to_be(true)
+  - it returns false for anything else:
+      expect(f()).to_be(false)
+      expect(f(true)).to_be(false)
+      expect(f(42)).to_be(false)
+      expect(f 'str').to_be(false)
+      expect(f {}).to_be(false)
+  - it returns false for a metatable that is protected by a non-table:
+      expect(f(setmetatable({}, {__metatable = true}))).to_be(false)
 
 
 - describe case:

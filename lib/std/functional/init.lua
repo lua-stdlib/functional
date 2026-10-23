@@ -184,26 +184,6 @@ local function bind(fn, bound)
 end
 
 
--- No need to recurse because functables are second class citizens in
--- Lua:
--- func=function() print 'called' end
--- func() --> 'called'
--- functable=setmetatable({}, {__call=func})
--- functable() --> 'called'
--- nested=setmetatable({}, {__call=functable})
--- nested()
--- --> stdin:1: attempt to call a table value(global 'd')
--- --> stack traceback:
--- -->	stdin:1: in main chunk
--- -->		[C]: in ?
-local function callable(x)
-   if type(x) == 'function' then
-      return x
-   end
-   return (getmetatable(x) or {}).__call
-end
-
-
 -- Call a branch if it is callable, otherwise return it as it is.
 local function call(branch, ...)
    if callable(branch) then
@@ -809,6 +789,9 @@ return {
    -- @see iter
    -- @usage
    --   --> {'a', 'b', 'c', n=3}
+   --   collect(('a b c'):gmatch '%a')
+   --
+   --   --> {1, 2, 3, n=3}, the first result of each iteration
    --   collect(iter(ipairs {'a', 'b', 'c'}))
    collect = X('collect(table|function)', collect),
 
@@ -1354,13 +1337,18 @@ return {
    --   cube = bind(std.functional.operator.pow, {[2] = 3})
    bind = X('bind(callable, table)', bind),
 
-   --- Identify callable types.
+   --- Return *x* if it can be called, otherwise `nil`.
+   -- A function can be called, and so can a functable, a table with a
+   -- `__call` metamethod.  The functable itself is returned, rather than
+   -- its `__call` metamethod, which needs the functable as its first
+   -- argument; this is the same function as std.normalize's.
    -- @function callable
    -- @signature callable(<?any>)
    -- @param x an object or primitive
-   -- @return `true` if *x* can be called, otherwise `false`
+   -- @return *x* if *x* can be called, otherwise `nil`
+   -- @see iscallable
    -- @usage
-   --   if callable(functable) then functable(args) end
+   --   (callable(functable) or function() end)(args)
    callable = X('callable(<?any>)', callable),
 
    --- Compose functions.
@@ -1411,6 +1399,17 @@ return {
    -- @param ... arguments
    -- @return *arguments*
    id = id,   -- any number of any type arguments!
+
+   --- Whether *x* can be called.
+   -- @function iscallable
+   -- @signature iscallable(<?any>)
+   -- @param x an object or primitive
+   -- @treturn boolean `true` if *x* is a function or a functable,
+   --    otherwise `false`
+   -- @see callable
+   -- @usage
+   --   if iscallable(handler) then handler(event) end
+   iscallable = X('iscallable(<?any>)', iscallable),
 
    --- Compile a lambda string into a Lua function.
    --
