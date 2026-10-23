@@ -2,6 +2,9 @@
 
 ## Noteworthy changes in release ?.? (????-??-?) [?]
 
+
+## Noteworthy changes in release 2 (2026-10-22) [stable]
+
 ### Incompatible changes
 
   - std.functional 2 is a new design, after `luke.functional`.  Load it
