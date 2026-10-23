@@ -99,22 +99,6 @@ local function topredicate(x)
 end
 
 
--- An iterator function over the flat sequence of what *t* holds, in
--- order: it goes into the tables among its elements, and gives what they
--- hold instead.  It is what flatten collects.  (Unlike `ielems`, it does
--- not stop at a table, and unlike `Tree.leaves`, it gives no paths.)
-local function flatiter(t)
-   local function visit(n)
-      if type(n) == 'table' then
-         walk(n, visit)
-      else
-         yield(n)
-      end
-   end
-   return wrap(function() visit(t) end)
-end
-
-
 local function default(x, d)
    if x == nil then
       return d
@@ -295,7 +279,18 @@ local filter, reject = keeper(true), keeper(false)
 
 
 local function flatten(t)
-   return collect(flatiter(t))
+   local r, n = {}, 0
+   local function visit(x)
+      if type(x) == 'table' then
+         walk(x, visit)
+      else
+         n = n + 1
+         r[n] = x
+      end
+   end
+   walk(t, visit)
+   r.n = n
+   return r
 end
 
 
@@ -845,10 +840,16 @@ return {
    -- @function flatten
    -- @signature flatten(table)
    -- @tparam table t a table
-   -- @treturn table a list of all non-table elements of *t*
+   -- @treturn table a list of all non-table elements of *t*, in order,
+   --    with its length in field `n`; a hole in a table is an element that
+   --    is nil, so it is kept
+   -- @see reject
    -- @usage
    --   --> {1, 2, 3, 4, 5}
    --   flatten {{1, {{2}, 3}, 4}, 5}
+   --
+   --   --> {1, 2, 3, n=3}, leaving out the elements that are nil
+   --   reject(flatten(pack(1, nil, pack(2, nil, 3))), nil)
    flatten = X('flatten(table)', flatten),
 
    --- Fold a binary function left associatively.

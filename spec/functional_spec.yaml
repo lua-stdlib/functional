@@ -734,6 +734,16 @@ specify functional:
       expect(f {}).to_equal {n=0}
   - it flattens a nested table:
       expect(f(t)).to_equal {n=4, 'one', 'two', 'three', 'four'}
+  - it keeps holes, as an element that is nil:
+      expect(f(M.collect {1, 2})).to_equal {n=2, 1, 2}
+      expect(f(pack(1, nil, 3))).to_equal(pack(1, nil, 3))
+      expect(f {1, pack(2, nil, 4), 5}).to_equal(pack(1, 2, nil, 4, 5))
+  - it keeps holes at the end:
+      expect(f(pack(1, nil, nil))).to_equal(pack(1, nil, nil))
+  - it leaves out nils with reject:
+      expect(M.reject(f(pack(1, nil, pack(2, nil, 3))), nil)).to_equal {n=3, 1, 2, 3}
+  - it flattens an iterator function's items:
+      expect(f(M.collect(('a b'):gmatch '%a'))).to_equal {n=2, 'a', 'b'}
 
 
 - describe foldl:
