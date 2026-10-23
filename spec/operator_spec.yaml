@@ -47,6 +47,9 @@ specify functional.operator:
       expect(f('x', setmetatable({}, mt))).to_be 'concat'
   - it stringifies arguments without a __concat metamethod: |
       expect(f({}, '')).to_match '^table: '
+  - it stringifies an argument with a protected metatable that is not a table: |
+      expect(f(setmetatable({}, {__metatable = true}), '')).to_match '^table: '
+      expect(f('', setmetatable({}, {__metatable = 42}))).to_match '^table: '
 
 
 - describe len:

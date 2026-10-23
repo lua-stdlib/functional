@@ -48,8 +48,7 @@ return {
    --   --> '=> 1000010010'
    --   foldl(concat, '=> ', {10000, 100, 10})
    concat = function(a, b)
-      local ma, mb = getmetatable(a), getmetatable(b)
-      if ma and ma.__concat or mb and mb.__concat then
+      if getmetamethod(a, '__concat') or getmetamethod(b, '__concat') then
          return a .. b
       end
       return tostring(a) .. tostring(b)

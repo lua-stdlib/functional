@@ -140,7 +140,8 @@
 
   - `operator.concat` honours a `__concat` metamethod of either
     argument, like the `..` operator, instead of always concatenating
-    the stringified arguments.
+    the stringified arguments, and no longer raises an error for an
+    argument whose `__metatable` field is not a table.
 
   - Every function argument that is not a predicate accepts a functable
     too, when typecheck is installed: `any`, `bind`, `compose`, `curry`,
