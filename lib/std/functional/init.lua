@@ -749,11 +749,33 @@ local function mapkeys(t, fn)
 end
 
 
+-- Numbers first, in numeric order, then everything else by its string
+-- form, as std.normalize's `str` renders the keys of a table.
+local function keyorder(a, b)
+   if type(a) == 'number' then
+      return type(b) ~= 'number' or a < b
+   end
+   return type(b) ~= 'number' and tostring(a) < tostring(b)
+end
+
+
+local function keys(t)
+   local r, n = {}, 0
+   for k in next, t do
+      n = n + 1
+      r[n] = k
+   end
+   sort(r, keyorder)
+   r.n = n
+   return r
+end
+
+
 local function values(t)
    local r, n = {}, 0
-   for _, v in next, t do
+   for _, k in ipairs(keys(t)) do
       n = n + 1
-      r[n] = v
+      r[n] = t[k]
    end
    r.n = n
    return r
@@ -1268,6 +1290,24 @@ return {
    --   invert {'a', 'b'}
    invert = X('invert(table)', invert),
 
+   --- The keys of a table.
+   -- The keys are in a fixed order, so that the same table always gives
+   -- the same list: numbers first, in numeric order, and then all the
+   -- others by their string form, as `str` in std.normalize renders the
+   -- keys of a table.  @{values} lists the values in the same order.
+   -- Every field has a key, so the `n` field of a list with a length is
+   -- one too: use @{collect} to list the items of a list.
+   -- @function keys
+   -- @signature keys(table)
+   -- @tparam table t a table
+   -- @treturn table a list of the keys of *t*, with its length in
+   --    field `n`
+   -- @see values
+   -- @usage
+   --   --> {1, 2, 'a', 'b', n=4}
+   --   keys {a=1, 'x', 'y', b=2}
+   keys = X('keys(table)', keys),
+
    --- Map a function over the keys of a table.
    -- The values are kept.  If *fn* returns nil for a key, the entry is
    -- left out, and if it returns the same key for more than one, one of
@@ -1354,9 +1394,10 @@ return {
    -- @tparam table t a table
    -- @treturn table a list of the values of *t*, with its length in
    --    field `n`
+   -- @see keys
    -- @usage
-   --   --> {1, 2, n=2}, in some order
-   --   values {a=1, b=2}
+   --   --> {'x', 'y', 1, 2, n=4}
+   --   values {a=1, 'x', 'y', b=2}
    values = X('values(table)', values),
 
    --- Functions

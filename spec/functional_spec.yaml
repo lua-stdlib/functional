@@ -9,7 +9,7 @@ before:
       'any', 'apply', 'bind', 'call', 'callable', 'case', 'choose', 'collect', 'compact', 'compose', 'cond',
       'contains', 'converge', 'curry', 'default', 'detect', 'each', 'either', 'except',
       'filter', 'firstof', 'flatmap', 'flatten', 'foldl', 'foldr', 'force',
-      'id', 'indexof', 'invert', 'iscallable', 'isempty', 'iter', 'lambda',
+      'id', 'indexof', 'invert', 'iscallable', 'isempty', 'iter', 'keys', 'lambda',
       'map', 'map_with', 'mapkeys', 'mapvalues', 'memoize', 'merged', 'nop',
       'partition', 'pluck', 'predicate', 'product', 'reject', 'reversed', 'shape',
       'some',
@@ -1002,6 +1002,32 @@ specify functional:
       expect(f(false)).to_be(false)
 
 
+- describe keys:
+  - before:
+      f = M.keys
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.keys(table)', f)
+
+  - it works with an empty table:
+      expect(f {}).to_equal {n=0}
+  - it lists the keys, with n:
+      expect(f {c=3, a=1, b=2}).to_equal {n=3, 'a', 'b', 'c'}
+  - it lists every key, including that of a false value:
+      expect(f {a=false}).to_equal {n=1, 'a'}
+  - it lists the indices of a list:
+      expect(f {'x', 'y'}).to_equal {n=2, 1, 2}
+  - it lists numbers first, in numeric order, then the others by name:
+      expect(f {b=1, [10]=1, a=1, [2]=1, [1.5]=1, [-1]=1}).
+         to_equal {n=6, -1, 1.5, 2, 10, 'a', 'b'}
+  - it lists the same keys in the same order every time:
+      t = {z=1, y=2, x=3, 'p', 'q', [7]=4, [true]=5}
+      expect(f(t)).to_equal(f(t))
+  - it returns a new table:
+      t = {1}
+      expect(f(t)).not_to_be(t)
+
+
 - describe lambda:
   - before:
       f = M.lambda
@@ -1653,7 +1679,13 @@ specify functional:
   - it lists the values, with n:
       r = f {a=1, b=2, c=3}
       expect(r.n).to_be(3)
-      expect({r[1], r[2], r[3]}).to_contain.a_permutation_of {1, 2, 3}
+      expect({r[1], r[2], r[3]}).to_equal {1, 2, 3}
+  - it lists the values in the order of the keys:
+      t = {c='z', a='x', b='y', 'p'}
+      r, ks = f(t), M.keys(t)
+      for i = 1, ks.n do
+         expect(r[i]).to_be(t[ks[i]])
+      end
   - it lists every value, including false:
       expect(f {a=false}).to_equal {n=1, false}
   - it returns a new table:

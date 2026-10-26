@@ -12,6 +12,13 @@
     chosen, and any other value can be a branch too.  `call` and `apply`
     are errors for something that cannot be called.
 
+  - New `keys`, to list the keys of a table, as `values` lists its
+    values.  The keys are in a fixed order, numbers first and then the
+    rest by their string form, as std.normalize's `str` renders them, so
+    code that depends on the result no longer varies from run to run.
+    `values` lists the values in the same order, so that `keys(t)[i]`
+    is the key of `values(t)[i]`.
+
 
 ## Noteworthy changes in release 2 (2026-10-22) [stable]
 
