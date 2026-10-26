@@ -51,12 +51,14 @@ local _ENV = require 'std.normalize' {
    'coroutine.wrap',
    'coroutine.yield',
    'math.ceil',
+   'math.tointeger',
    'std.functional._base.argscheck',
    'std.functional._base.serialize',
    'string.format',
    'table.concat',
    'table.remove',
    'table.sort',
+   iotype = 'io.type',
 }
 
 
@@ -705,6 +707,37 @@ local function isempty(x)
 end
 
 
+local function isfile(x)
+   return iotype(x) == 'file'
+end
+
+
+local function islistkey(t, k)
+   return type(k) == 'number' and tointeger(k) == k and k >= 1 and
+      k <= (tointeger(t.n) or len(t))
+end
+
+
+local function isnonzero(x)
+   return x ~= 0
+end
+
+
+local function isstring(x)
+   return type(x) == 'string'
+end
+
+
+local function istable(x)
+   return type(x) == 'table'
+end
+
+
+local function destructure(t)
+   return next(t)
+end
+
+
 local function either(x, default)
    if x == nil or isempty(x) then
       return default
@@ -1217,6 +1250,77 @@ return {
    --   isempty {}, isempty(table.pack()), isempty ''
    isempty = X('isempty(?any)', isempty),
 
+   --- Whether a value is an open file.
+   -- A file that has been closed is not.
+   -- @function isfile
+   -- @signature isfile(<?any...>)
+   -- @param x a value
+   -- @param ... ignored, so that it can test the first result of an
+   --    iteration that has several
+   -- @treturn boolean `true` if *x* is an open file, otherwise `false`
+   -- @usage
+   --   --> true, false, false
+   --   isfile(io.stdout), isfile 'stdout', isfile(nil)
+   isfile = X('isfile(<?any...>)', isfile),
+
+   --- Whether a key is the index of an item of the list part of a table.
+   -- A list has the items from 1 to its `n` field, or its length, so a
+   -- key is a list key only if it is an integer in that range: `n`
+   -- itself, and the keys of the fields that are not items, are not.
+   -- @function islistkey
+   -- @signature islistkey(table, ?any)
+   -- @tparam table t a table
+   -- @param k a key
+   -- @treturn boolean `true` if *k* indexes an item of *t*, otherwise
+   --    `false`
+   -- @see keys
+   -- @usage
+   --   --> true, false, false
+   --   islistkey({'a', b=1}, 1), islistkey({'a', b=1}, 'b'), islistkey({'a'}, 2)
+   islistkey = X('islistkey(table, ?any)', islistkey),
+
+   --- Whether a value is anything but the number zero.
+   -- Handy for exit statuses: `firstof(steps, isnonzero, call)` is the
+   -- first failure of a series of steps.
+   -- @function isnonzero
+   -- @signature isnonzero(<?any...>)
+   -- @param x a value
+   -- @param ... ignored, so that it can test the first result of an
+   --    iteration that has several
+   -- @treturn boolean `false` if *x* is the number `0`, otherwise `true`
+   -- @see predicate
+   -- @usage
+   --   --> false, true, true
+   --   isnonzero(0), isnonzero(1), isnonzero(nil)
+   isnonzero = X('isnonzero(<?any...>)', isnonzero),
+
+   --- Whether a value is a string.
+   -- @function isstring
+   -- @signature isstring(<?any...>)
+   -- @param x a value
+   -- @param ... ignored, so that it can test the first result of an
+   --    iteration that has several
+   -- @treturn boolean `true` if *x* is a string, otherwise `false`
+   -- @see istable
+   -- @usage
+   --   --> {'a', 'b'}
+   --   filter({'a', 1, 'b'}, isstring)
+   isstring = X('isstring(<?any...>)', isstring),
+
+   --- Whether a value is a table.
+   -- A table with a metatable is a table too, whatever its type name.
+   -- @function istable
+   -- @signature istable(<?any...>)
+   -- @param x a value
+   -- @param ... ignored, so that it can test the first result of an
+   --    iteration that has several
+   -- @treturn boolean `true` if *x* is a table, otherwise `false`
+   -- @see isstring
+   -- @usage
+   --   --> {{1}, {2}}
+   --   filter({{1}, 'x', {2}}, istable)
+   istable = X('istable(<?any...>)', istable),
+
    --- Make a predicate from a value, a function or a functable.
    -- A plain function is returned as is, and a @{lambda} is unwrapped to
    -- the function inside it, so that its source string can no longer be
@@ -1259,6 +1363,20 @@ return {
 
    --- Tables
    -- @section tables
+
+   --- The key and value of the first entry of a table.
+   -- This is `next(t)`, named for taking apart a table of one pair, as
+   -- the items of a list of one-pair tables are: any other table has
+   -- no first entry that you can rely on.
+   -- @function destructure
+   -- @signature destructure(table)
+   -- @tparam table t a table of one pair
+   -- @return the key of the entry, or `nil` if *t* is empty
+   -- @return the value of the entry
+   -- @usage
+   --   --> 'name', 'value'
+   --   destructure {name='value'}
+   destructure = X('destructure(table)', destructure),
 
    --- A copy of a table without the keys that match a key or predicate.
    -- Anything but a plain function is compared with each key, as `==`.

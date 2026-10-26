@@ -19,6 +19,11 @@
     `values` lists the values in the same order, so that `keys(t)[i]`
     is the key of `values(t)[i]`.
 
+  - New `isstring`, `istable`, `isfile`, `islistkey` and `isnonzero` are
+    predicates that work as the predicate argument of `filter` and its
+    like, and `destructure` returns the key and value of a table of one
+    pair.
+
 
 ## Noteworthy changes in release 2 (2026-10-22) [stable]
 

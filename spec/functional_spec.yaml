@@ -7,9 +7,10 @@ before:
 
    exported_apis = {
       'any', 'apply', 'bind', 'call', 'callable', 'case', 'choose', 'collect', 'compact', 'compose', 'cond',
-      'contains', 'converge', 'curry', 'default', 'detect', 'each', 'either', 'except',
+      'contains', 'converge', 'curry', 'default', 'destructure', 'detect', 'each', 'either', 'except',
       'filter', 'firstof', 'flatmap', 'flatten', 'foldl', 'foldr', 'force',
-      'id', 'indexof', 'invert', 'iscallable', 'isempty', 'iter', 'keys', 'lambda',
+      'id', 'indexof', 'invert', 'iscallable', 'isempty', 'isfile', 'islistkey',
+      'isnonzero', 'isstring', 'istable', 'iter', 'keys', 'lambda',
       'map', 'map_with', 'mapkeys', 'mapvalues', 'memoize', 'merged', 'nop',
       'partition', 'pluck', 'predicate', 'product', 'reject', 'reversed', 'shape',
       'some',
@@ -581,6 +582,22 @@ specify functional:
       expect(f {}).to_be(nil)
 
 
+- describe destructure:
+  - before:
+      f = M.destructure
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.destructure(table)', f)
+
+  - it returns the key and value of a table of one pair:
+      expect({f {name='value'}}).to_equal {'name', 'value'}
+      expect({f {'x'}}).to_equal {1, 'x'}
+  - it keeps a false value:
+      expect({f {a=false}}).to_equal {'a', false}
+  - it returns nothing but nil for an empty table:
+      expect(f {}).to_be(nil)
+
+
 - describe except:
   - before:
       f = M.except
@@ -976,6 +993,125 @@ specify functional:
   - it returns a new table:
       t = {a=1}
       expect(f(t)).not_to_be(t)
+
+
+- describe isfile:
+  - before:
+      f = M.isfile
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.isfile(<?any...>)', f)
+
+  - it is true for an open file:
+      expect(f(io.stdout)).to_be(true)
+  - it is false for a closed file:
+      h = io.tmpfile()
+      h:close()
+      expect(f(h)).to_be(false)
+  - it is false for anything else:
+      expect(f(nil)).to_be(false)
+      expect(f 'stdout').to_be(false)
+      expect(f {}).to_be(false)
+  - it ignores further arguments:
+      expect(f(io.stdout, 1, 2)).to_be(true)
+
+
+- describe islistkey:
+  - before:
+      f = M.islistkey
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.islistkey(table, ?any)', f)
+
+  - it is true for the index of an item:
+      expect(f({'a', 'b'}, 1)).to_be(true)
+      expect(f({'a', 'b'}, 2)).to_be(true)
+  - it is false beyond the items:
+      expect(f({'a', 'b'}, 0)).to_be(false)
+      expect(f({'a', 'b'}, 3)).to_be(false)
+      expect(f({'a', 'b'}, -1)).to_be(false)
+  - it is false for a key that is not an integer:
+      expect(f({'a', 'b'}, 1.5)).to_be(false)
+      expect(f({'a', 'b', x=1}, 'x')).to_be(false)
+      expect(f({'a', 'b', x=1}, nil)).to_be(false)
+  - it counts to the n field of a list with holes:
+      expect(f(pack(nil, nil, 3), 2)).to_be(true)
+      expect(f(pack(nil, nil, 3), 4)).to_be(false)
+  - it is false for the n field itself:
+      expect(f(pack('a'), 'n')).to_be(false)
+  - it accepts an integer valued float:
+      expect(f({'a'}, 1.0)).to_be(true)
+
+
+- describe isnonzero:
+  - before:
+      f = M.isnonzero
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.isnonzero(<?any...>)', f)
+
+  - it is false for zero:
+      expect(f(0)).to_be(false)
+  - it is true for any other number:
+      expect(f(1)).to_be(true)
+      expect(f(-1)).to_be(true)
+  - it is true for anything else:
+      expect(f(nil)).to_be(true)
+      expect(f(false)).to_be(true)
+      expect(f '0').to_be(true)
+  - it finds the first failure with firstof:
+      expect(M.firstof({0, 3, 0, 5}, f, M.id)).to_be(3)
+  - it ignores further arguments:
+      expect(f(0, 1, 2)).to_be(false)
+
+
+- describe isstring:
+  - before:
+      f = M.isstring
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.isstring(<?any...>)', f)
+
+  - it is true for a string:
+      expect(f 'x').to_be(true)
+      expect(f '').to_be(true)
+  - it is false for anything else:
+      expect(f(nil)).to_be(false)
+      expect(f(1)).to_be(false)
+      expect(f(false)).to_be(false)
+      expect(f {}).to_be(false)
+      expect(f(f)).to_be(false)
+  - it is false for an object with a __tostring metamethod:
+      expect(f(setmetatable({}, {__tostring = function() return 'x' end}))).
+         to_be(false)
+  - it works as a predicate:
+      expect(M.filter({'a', 1, 'b', {}}, f)).to_equal {n=2, 'a', 'b'}
+  - it ignores further arguments:
+      expect(f('a', 1, 2)).to_be(true)
+
+
+- describe istable:
+  - before:
+      f = M.istable
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.istable(<?any...>)', f)
+
+  - it is true for a table:
+      expect(f {}).to_be(true)
+      expect(f {1, a=2}).to_be(true)
+  - it is true for a table with a metatable:
+      expect(f(setmetatable({}, {__call = function() end}))).to_be(true)
+  - it is false for anything else:
+      expect(f(nil)).to_be(false)
+      expect(f(1)).to_be(false)
+      expect(f 'x').to_be(false)
+      expect(f(false)).to_be(false)
+      expect(f(f)).to_be(false)
+  - it works as a predicate:
+      expect(M.filter({{1}, 'x', {2}}, f)).to_equal {n=2, {1}, {2}}
+  - it ignores further arguments:
+      expect(f({}, 1, 2)).to_be(true)
 
 
 - describe isempty:
