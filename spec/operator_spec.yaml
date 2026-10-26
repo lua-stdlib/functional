@@ -101,6 +101,14 @@ specify functional.operator:
       expect(f({}, 1)).to_be(nil)
       expect(f({'foo', 'bar'}, 1)).to_be 'foo'
       expect(f({foo = 'bar'}, 'foo')).to_be 'bar'
+  - it returns a false value as it is:
+      expect(f({foo = false}, 'foo')).to_be(false)
+  - it returns nil for a nil or false table:
+      expect(f(nil, 'foo')).to_be(nil)
+      expect(f(false, 'foo')).to_be(nil)
+  - it honours an __index metamethod:
+      t = setmetatable({}, {__index = function(_, k) return k .. '!' end})
+      expect(f(t, 'foo')).to_be 'foo!'
 
 - describe set:
   - before:

@@ -24,6 +24,11 @@
     like, and `destructure` returns the key and value of a table of one
     pair.
 
+### Bug fixes
+
+  - `operator.get` returns a value of `false` as it is, where it
+    returned `nil`.
+
 
 ## Noteworthy changes in release 2 (2026-10-22) [stable]
 

@@ -65,12 +65,15 @@ return {
    --- Dereference a table.
    -- @tparam table t a table
    -- @param k a key to lookup in *t*
-   -- @return value stored at *t[k]* if any, otherwise `nil`
+   -- @return value stored at *t[k]* if any, otherwise `nil`; and `nil` if
+   --    *t* is `nil` or `false`
    -- @usage
    --   --> 4
    --   foldl(get, {1, {{2, 3, 4}, 5}}, {2, 1, 3})
    get = function(t, k)
-      return t and t[k] or nil
+      if t then
+         return t[k]
+      end
    end,
 
    --- Set a table element, honoring metamethods.
