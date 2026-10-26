@@ -168,8 +168,20 @@ local function bind(fn, bound)
 end
 
 
+-- Call *fn* with the arguments.
+local function call(fn, ...)
+   return fn(...)
+end
+
+
+-- Call *fn* with the items of the list *argu*, even trailing nils.
+local function apply(fn, argu)
+   return fn(unpack(argu, 1, argu.n or len(argu)))
+end
+
+
 -- Call a branch if it is callable, otherwise return it as it is.
-local function call(branch, ...)
+local function force(branch, ...)
    if callable(branch) then
       return branch(...)
    end
@@ -179,7 +191,7 @@ end
 
 local function case(with, branches)
    if branches[with] ~= nil then
-      return call(branches[with], with)
+      return force(branches[with], with)
    end
 
    if type(with) == 'string' then
@@ -188,13 +200,13 @@ local function case(with, branches)
          if type(clause) == 'table' and type(clause[1]) == 'string' then
             local captures = pack(with:match('^' .. clause[1] .. '$'))
             if captures[1] ~= nil then
-               return call(clause[2], unpack(captures, 1, captures.n))
+               return force(clause[2], unpack(captures, 1, captures.n))
             end
          end
       end
    end
 
-   return call(branches.default, with)
+   return force(branches.default, with)
 end
 
 
@@ -240,7 +252,7 @@ local function choose(test, consequent, alternative)
    if test then
       leg = consequent
    end
-   return call(leg, test)
+   return force(leg, test)
 end
 
 
@@ -249,7 +261,7 @@ local function cond(...)
    for i = 1, clauses.n do
       local test, branch = unpack(clauses[i], 1, 2)
       if test then
-         return call(branch, test)
+         return force(branch, test)
       end
    end
 end
@@ -1359,6 +1371,19 @@ return {
    --   old_object_type = any(std.object.type, io.type, type)
    any = X('any(callable...)', any),
 
+   --- Call a function with the items of a list as its arguments.
+   -- The items of *argu* are its values from 1 to its `n` field or its
+   -- length, so a list made with `table.pack` keeps its trailing nils.
+   -- @function apply
+   -- @signature apply(callable, table)
+   -- @func fn function to call
+   -- @tparam table argu list of arguments for *fn*
+   -- @return the results of calling *fn*
+   -- @see call, force
+   -- @usage
+   --   apply(math.max, {3, 9, 4})  --> 9
+   apply = X('apply(callable, table)', apply),
+
    --- Partially apply a function.
    -- @function bind
    -- @signature bind(callable, table)
@@ -1368,6 +1393,18 @@ return {
    -- @usage
    --   cube = bind(std.functional.operator.pow, {[2] = 3})
    bind = X('bind(callable, table)', bind),
+
+   --- Call a function with the arguments.
+   -- Unlike @{force}, this is an error if *fn* cannot be called.
+   -- @function call
+   -- @signature call(callable, <?any...>)
+   -- @func fn function to call
+   -- @param ... arguments for *fn*
+   -- @return the results of calling *fn*
+   -- @see apply, force
+   -- @usage
+   --   call(string.rep, 'ab', 3)  --> 'ababab'
+   call = X('call(callable, <?any...>)', call),
 
    --- Return *x* if it can be called, otherwise `nil`.
    -- A function can be called, and so can a functable, a table with a
@@ -1424,6 +1461,23 @@ return {
    --   add = curry(function(x, y) return x + y end, 2)
    --   incr, decr = add(1), add(-1)
    curry = X('curry(callable, int)', curry),
+
+   --- Call *x* with the arguments if it can be called, otherwise return it.
+   -- A function or a functable is called, and anything else, `nil` and
+   -- `false` included, is returned as it is.  This is how @{case},
+   -- @{choose} and @{cond} treat their branches, so a branch that is a
+   -- function is only called when it is selected, and any other value
+   -- can be a branch too.  Use @{call} to insist on a function.
+   -- @function force
+   -- @signature force(?any, <?any...>)
+   -- @param x a function, a functable or any other value
+   -- @param ... arguments for *x*, if it can be called
+   -- @return the results of calling *x*, or *x* itself
+   -- @see call, apply, callable
+   -- @usage
+   --   force(function(n) return n + 1 end, 1)  --> 2
+   --   force('default', 1)  --> 'default'
+   force = X('force(?any, <?any...>)', force),
 
    --- Identity function.
    -- @function id

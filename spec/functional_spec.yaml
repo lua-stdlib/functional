@@ -6,9 +6,9 @@ before:
    global_table = '_G'
 
    exported_apis = {
-      'any', 'bind', 'callable', 'case', 'choose', 'collect', 'compact', 'compose', 'cond',
+      'any', 'apply', 'bind', 'call', 'callable', 'case', 'choose', 'collect', 'compact', 'compose', 'cond',
       'contains', 'converge', 'curry', 'default', 'detect', 'each', 'either', 'except',
-      'filter', 'firstof', 'flatmap', 'flatten', 'foldl', 'foldr',
+      'filter', 'firstof', 'flatmap', 'flatten', 'foldl', 'foldr', 'force',
       'id', 'indexof', 'invert', 'iscallable', 'isempty', 'iter', 'lambda',
       'map', 'map_with', 'mapkeys', 'mapvalues', 'memoize', 'merged', 'nop',
       'partition', 'pluck', 'predicate', 'product', 'reject', 'reversed', 'shape',
@@ -59,6 +59,28 @@ specify functional:
       expect(f(M.id, fail)(true)).to_be(true)
 
 
+- describe apply:
+  - before:
+      f = M.apply
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.apply(callable, table)', f)
+
+  - it calls a function with the items of a list:
+      expect(f(function(a, b) return a + b end, {1, 2})).to_be(3)
+  - it calls a functable:
+      functable = setmetatable({}, {__call = function(_, x) return x end})
+      expect(f(functable, {'a'})).to_be 'a'
+  - it passes the trailing nils of a list with its length in `n`:
+      expect(f(function(...) return select('#', ...) end, pack(1, nil, nil))).to_be(3)
+  - it passes the items up to the length of a list without `n`:
+      expect(f(function(...) return select('#', ...) end, {1, 2, 3})).to_be(3)
+  - it returns all the results:
+      expect({f(M.id, {1, 2, 3})}).to_equal {1, 2, 3}
+  - it raises an error for an argument that cannot be called: |
+      expect(M.apply('a', {1, 2})).to_raise()
+
+
 - describe bind:
   - before:
       op = require 'std.functional.operator'
@@ -92,6 +114,26 @@ specify functional:
       expect(r).to_equal(pack(nil, 'b', 3, 'd', nil, nil, 7))
       r = pack(f(M.id, {[2]='b', [4]='d'})(nil, 3, nil, nil, 7, nil, nil))
       expect(r).to_equal(pack(nil, 'b', 3, 'd', nil, nil, 7, nil, nil))
+
+
+- describe call:
+  - before:
+      f = M.call
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.call(callable, <?any...>)', f)
+
+  - it calls a function with the arguments:
+      expect(f(function(a, b) return a + b end, 1, 2)).to_be(3)
+  - it calls a functable:
+      functable = setmetatable({}, {__call = function(_, x) return x end})
+      expect(f(functable, 'a')).to_be 'a'
+  - it passes nil arguments:
+      expect(f(function(...) return select('#', ...) end, nil, nil)).to_be(2)
+  - it returns all the results:
+      expect({f(M.id, 1, 2, 3)}).to_equal {1, 2, 3}
+  - it raises an error for an argument that cannot be called: |
+      expect(M.call('a', 1, 2)).to_raise()
 
 
 - describe callable:
@@ -840,6 +882,28 @@ specify functional:
       expect(f(pack(1, nil, 3), 0, function(e, acc)
          return acc + (e or 10)
       end)).to_be(14)
+
+
+- describe force:
+  - before:
+      f = M.force
+
+  - context with bad arguments:
+      badargs.diagnose('std.functional.force(?any, <?any...>)', f)
+
+  - it calls a function with the arguments:
+      expect(f(function(a, b) return a + b end, 1, 2)).to_be(3)
+  - it calls a functable:
+      functable = setmetatable({}, {__call = function(_, x) return x end})
+      expect(f(functable, 'a')).to_be 'a'
+  - it returns anything else as it is:
+      expect(f('a', 1, 2)).to_be 'a'
+      expect(f(false, 1, 2)).to_be(false)
+      expect(f(nil, 1, 2)).to_be(nil)
+      expect(f(42)).to_be(42)
+  - it returns a table that is not callable as it is:
+      t = {}
+      expect(f(t, 1)).to_be(t)
 
 
 - describe id:

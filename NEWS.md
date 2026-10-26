@@ -2,6 +2,16 @@
 
 ## Noteworthy changes in release ?.? (????-??-?) [?]
 
+### New features
+
+  - New `call`, which calls a function with its arguments, `apply`,
+    which calls one with the items of a list, and `force`, which calls
+    its first argument if that can be called, and otherwise returns it.
+    `force` is what `case`, `choose` and `cond` already did to their
+    branches, so a branch that is a function is only called when it is
+    chosen, and any other value can be a branch too.  `call` and `apply`
+    are errors for something that cannot be called.
+
 
 ## Noteworthy changes in release 2 (2026-10-22) [stable]
 
