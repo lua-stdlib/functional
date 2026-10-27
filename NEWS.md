@@ -24,6 +24,12 @@
     like, and `destructure` returns the key and value of a table of one
     pair.
 
+  - std.functional is built from the `build` table of its rockspec, by the
+    `luarocks-build-luke` LuaRocks build backend, which LuaRocks
+    installs for the build, so there is no `build-aux/luke` build to
+    run, and no build without LuaRocks.  Building LDocs, which a release
+    commits, no longer needs a build dependency of its own.
+
 ### Bug fixes
 
   - `operator.get` returns a value of `false` as it is, where it

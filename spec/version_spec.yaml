@@ -1,0 +1,21 @@
+# Functional programming for Lua 5.1, 5.2, 5.3, 5.4 & 5.5
+# Copyright (C) 2014-2026 std.functional authors
+
+before:
+  this_module = 'std.functional.version'
+
+  M = require(this_module)
+
+specify std.functional.version:
+- context when required:
+  - it returns a string:
+      expect(type(M)).to_be 'string'
+  - it does not touch the global table:
+      expect(show_apis {added_to='_G', by=this_module}).
+         to_equal {}
+
+- describe version:
+  - it describes this module:
+      expect(M).to_match '^Functional Programming Libraries'
+  - it ends with the release number or the stamp of a development build:
+      expect(M).to_match.any_of {' %d[%.%d]*$', ' [%w_.-]+/%x+$'}

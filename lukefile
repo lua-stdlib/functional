@@ -8,15 +8,10 @@ luke_format = 0
 package  = 'std.functional'
 version  = '$USER'
 
+-- LuaRocks builds the modules from the rockspec, which is how `luke release`
+-- builds them too, so what is left is for `luke`, to build the LDocs, and
+-- for `luke release`.
 ldocs    = 'build-aux/config.ld.in'
-
-modules  = {
-   {['std.functional']          = 'lib/std/functional/init.lua'},
-   {['std.functional._base']    = 'lib/std/functional/_base.lua'},
-   {['std.functional.operator'] = 'lib/std/functional/operator.lua'},
-   {['std.functional.tuple']    = 'lib/std/functional/tuple.lua'},
-   {['std.functional.version']  = 'lib/std/functional/version.lua.in'},
-}
 
 release  = {
    news               = 'NEWS.md',
