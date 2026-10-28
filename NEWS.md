@@ -2,6 +2,9 @@
 
 ## Noteworthy changes in release ?.? (????-??-?) [?]
 
+
+## Noteworthy changes in release 2.1 (2026-10-28) [stable]
+
 ### New features
 
   - New `call`, which calls a function with its arguments, `apply`,
