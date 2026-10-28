@@ -4,8 +4,8 @@ Functional Programming with Lua
 Copyright (C) 2002-2026 [std.functional authors][authors]
 
 [![License](http://img.shields.io/:license-mit-blue.svg)](https://mit-license.org/2002)
-[![workflow status](https://github.com/lua-stdlib/functional/actions/workflows/spec.yml/badge.svg?branch=master)](https://github.com/lua-stdlib/functional/actions)
-[![codecov.io](https://codecov.io/gh/lua-stdlib/functional/graph/badge.svg?branch=master)](https://codecov.io/gh/lua-stdlib/functional?branch=master)
+[![workflow status](https://github.com/lua-stdlib/functional/actions/workflows/spec.yml/badge.svg?branch=release-v2.1)](https://github.com/lua-stdlib/functional/actions)
+[![codecov.io](https://codecov.io/gh/lua-stdlib/functional/graph/badge.svg?branch=release-v2.1)](https://codecov.io/gh/lua-stdlib/functional?branch=release-v2.1)
 
 
 This is a collection of Functional Programming libraries for Lua 5.1
