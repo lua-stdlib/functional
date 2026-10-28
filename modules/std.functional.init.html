@@ -3,7 +3,7 @@
 <html>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 <head>
-    <title>functional 2 Reference</title>
+    <title>functional 2.1 Reference</title>
     <link rel="stylesheet" href="../ldoc.css" type="text/css" />
 </head>
 <body>
@@ -24,7 +24,7 @@
 
 <div id="navigation">
 <br/>
-<h1>functional 2</h1>
+<h1>functional 2.1</h1>
 
 
 <ul>
@@ -196,6 +196,26 @@
 	<td class="summary">Whether a value is a table with nothing in it.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#isfile">isfile (x, ...)</a></td>
+	<td class="summary">Whether a value is an open file.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#islistkey">islistkey (t, k)</a></td>
+	<td class="summary">Whether a key is the index of an item of the list part of a table.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#isnonzero">isnonzero (x, ...)</a></td>
+	<td class="summary">Whether a value is anything but the number zero.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#isstring">isstring (x, ...)</a></td>
+	<td class="summary">Whether a value is a string.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#istable">istable (x, ...)</a></td>
+	<td class="summary">Whether a value is a table.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#predicate">predicate (x)</a></td>
 	<td class="summary">Make a predicate from a value, a function or a functable.</td>
 	</tr>
@@ -207,12 +227,20 @@
 <h2><a href="#Tables">Tables </a></h2>
 <table class="function_list">
 	<tr>
+	<td class="name" nowrap><a href="#destructure">destructure (t)</a></td>
+	<td class="summary">The key and value of the first entry of a table.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#except">except (t, pred)</a></td>
 	<td class="summary">A copy of a table without the keys that match a key or predicate.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#invert">invert (t)</a></td>
 	<td class="summary">Swap the keys and values of a table.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#keys">keys (t)</a></td>
+	<td class="summary">The keys of a table.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#mapkeys">mapkeys (t, fn)</a></td>
@@ -246,8 +274,16 @@
 	<td class="summary">Call a series of functions until one returns non-nil.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#apply">apply (fn, argu)</a></td>
+	<td class="summary">Call a function with the items of a list as its arguments.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#bind">bind (fn, argt)</a></td>
 	<td class="summary">Partially apply a function.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#call">call (fn, ...)</a></td>
+	<td class="summary">Call a function with the arguments.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#callable">callable (x)</a></td>
@@ -265,6 +301,10 @@
 	<tr>
 	<td class="name" nowrap><a href="#curry">curry (fn, n)</a></td>
 	<td class="summary">Curry a function.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#force">force (x, ...)</a></td>
+	<td class="summary">Call <em>x</em> with the arguments if it can be called, otherwise return it.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#id">id (...)</a></td>
@@ -1492,6 +1532,240 @@ the 'columns' in a simple list
 
 </dd>
     <dt>
+    <a name = "isfile"></a>
+    <strong>isfile (x, ...)</strong>
+    </dt>
+    <dd>
+    Whether a value is an open file.
+ A file that has been closed is not.
+
+    <h3>Signature:</h3>
+    <ul>
+         isfile(<?any...>)
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+         a value
+        </li>
+        <li><span class="parameter">...</span>
+
+<p> ignored, so that it can test the first result of an</p>
+<pre><code>iteration that has several
+</code></pre>
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        <code>true</code> if <em>x</em> is an open file, otherwise <code>false</code>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="comment">--&gt; true, false, false
+</span><span class="function-name">isfile</span>(<span class="global">io</span>.stdout), <span class="function-name">isfile</span> <span class="string">'stdout'</span>, <span class="function-name">isfile</span>(<span class="keyword">nil</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "islistkey"></a>
+    <strong>islistkey (t, k)</strong>
+    </dt>
+    <dd>
+    Whether a key is the index of an item of the list part of a table.
+ A list has the items from 1 to its <code>n</code> field, or its length, so a
+ key is a list key only if it is an integer in that range: <code>n</code>
+ itself, and the keys of the fields that are not items, are not.
+
+    <h3>Signature:</h3>
+    <ul>
+         islistkey(table, ?any)
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">t</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.5/manual.html#6.7">table</a></span>
+         a table
+        </li>
+        <li><span class="parameter">k</span>
+         a key
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+
+<p><code>true</code> if <em>k</em> indexes an item of <em>t</em>, otherwise</p>
+<pre><code>`false`
+</code></pre>
+
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/std.functional.init.html#keys">keys</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="comment">--&gt; true, false, false
+</span><span class="function-name">islistkey</span>({<span class="string">'a'</span>, b=<span class="number">1</span>}, <span class="number">1</span>), <span class="function-name">islistkey</span>({<span class="string">'a'</span>, b=<span class="number">1</span>}, <span class="string">'b'</span>), <span class="function-name">islistkey</span>({<span class="string">'a'</span>}, <span class="number">2</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "isnonzero"></a>
+    <strong>isnonzero (x, ...)</strong>
+    </dt>
+    <dd>
+    Whether a value is anything but the number zero.
+ Handy for exit statuses: <code>firstof(steps, isnonzero, call)</code> is the
+ first failure of a series of steps.
+
+    <h3>Signature:</h3>
+    <ul>
+         isnonzero(<?any...>)
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+         a value
+        </li>
+        <li><span class="parameter">...</span>
+
+<p> ignored, so that it can test the first result of an</p>
+<pre><code>iteration that has several
+</code></pre>
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        <code>false</code> if <em>x</em> is the number <code>0</code>, otherwise <code>true</code>
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/std.functional.init.html#predicate">predicate</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="comment">--&gt; false, true, true
+</span><span class="function-name">isnonzero</span>(<span class="number">0</span>), <span class="function-name">isnonzero</span>(<span class="number">1</span>), <span class="function-name">isnonzero</span>(<span class="keyword">nil</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "isstring"></a>
+    <strong>isstring (x, ...)</strong>
+    </dt>
+    <dd>
+    Whether a value is a string.
+
+    <h3>Signature:</h3>
+    <ul>
+         isstring(<?any...>)
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+         a value
+        </li>
+        <li><span class="parameter">...</span>
+
+<p> ignored, so that it can test the first result of an</p>
+<pre><code>iteration that has several
+</code></pre>
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        <code>true</code> if <em>x</em> is a string, otherwise <code>false</code>
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/std.functional.init.html#istable">istable</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="comment">--&gt; {'a', 'b'}
+</span><span class="function-name">filter</span>({<span class="string">'a'</span>, <span class="number">1</span>, <span class="string">'b'</span>}, isstring)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "istable"></a>
+    <strong>istable (x, ...)</strong>
+    </dt>
+    <dd>
+    Whether a value is a table.
+ A table with a metatable is a table too, whatever its type name.
+
+    <h3>Signature:</h3>
+    <ul>
+         istable(<?any...>)
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+         a value
+        </li>
+        <li><span class="parameter">...</span>
+
+<p> ignored, so that it can test the first result of an</p>
+<pre><code>iteration that has several
+</code></pre>
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        <code>true</code> if <em>x</em> is a table, otherwise <code>false</code>
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/std.functional.init.html#isstring">isstring</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="comment">--&gt; {{1}, {2}}
+</span><span class="function-name">filter</span>({{<span class="number">1</span>}, <span class="string">'x'</span>, {<span class="number">2</span>}}, istable)</pre>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "predicate"></a>
     <strong>predicate (x)</strong>
     </dt>
@@ -1593,6 +1867,46 @@ the 'columns' in a simple list
 
     <dl class="function">
     <dt>
+    <a name = "destructure"></a>
+    <strong>destructure (t)</strong>
+    </dt>
+    <dd>
+    The key and value of the first entry of a table.
+ This is <code>next(t)</code>, named for taking apart a table of one pair, as
+ the items of a list of one-pair tables are: any other table has
+ no first entry that you can rely on.
+
+    <h3>Signature:</h3>
+    <ul>
+         destructure(table)
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">t</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.5/manual.html#6.7">table</a></span>
+         a table of one pair
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+        <li>
+        the key of the entry, or <code>nil</code> if <em>t</em> is empty</li>
+        <li>
+        the value of the entry</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="comment">--&gt; 'name', 'value'
+</span><span class="function-name">destructure</span> {name=<span class="string">'value'</span>}</pre>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "except"></a>
     <strong>except (t, pred)</strong>
     </dt>
@@ -1688,6 +2002,56 @@ the 'columns' in a simple list
     <ul>
         <pre class="example"><span class="comment">--&gt; {a=1, b=2}
 </span><span class="function-name">invert</span> {<span class="string">'a'</span>, <span class="string">'b'</span>}</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "keys"></a>
+    <strong>keys (t)</strong>
+    </dt>
+    <dd>
+    The keys of a table.
+ The keys are in a fixed order, so that the same table always gives
+ the same list: numbers first, in numeric order, and then all the
+ others by their string form, as <code>str</code> in std.normalize renders the
+ keys of a table.  <a href="../modules/std.functional.init.html#values">values</a> lists the values in the same order.
+ Every field has a key, so the <code>n</code> field of a list with a length is
+ one too: use <a href="../modules/std.functional.init.html#collect">collect</a> to list the items of a list.
+
+    <h3>Signature:</h3>
+    <ul>
+         keys(table)
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">t</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.5/manual.html#6.7">table</a></span>
+         a table
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.5/manual.html#6.7">table</a></span>
+
+<p>a list of the keys of <em>t</em>, with its length in</p>
+<pre><code>field `n`
+</code></pre>
+
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/std.functional.init.html#values">values</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="comment">--&gt; {1, 2, 'a', 'b', n=4}
+</span><span class="function-name">keys</span> {a=<span class="number">1</span>, <span class="string">'x'</span>, <span class="string">'y'</span>, b=<span class="number">2</span>}</pre>
     </ul>
 
 </dd>
@@ -1969,11 +2333,15 @@ options = <span class="function-name">merged</span>(defaults, user_options)</pre
     </ol>
 
 
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/std.functional.init.html#keys">keys</a>
+    </ul>
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example"><span class="comment">--&gt; {1, 2, n=2}, in some order
-</span><span class="function-name">values</span> {a=<span class="number">1</span>, b=<span class="number">2</span>}</pre>
+        <pre class="example"><span class="comment">--&gt; {'x', 'y', 1, 2, n=4}
+</span><span class="function-name">values</span> {a=<span class="number">1</span>, <span class="string">'x'</span>, <span class="string">'y'</span>, b=<span class="number">2</span>}</pre>
     </ul>
 
 </dd>
@@ -2017,6 +2385,51 @@ options = <span class="function-name">merged</span>(defaults, user_options)</pre
 
 </dd>
     <dt>
+    <a name = "apply"></a>
+    <strong>apply (fn, argu)</strong>
+    </dt>
+    <dd>
+    Call a function with the items of a list as its arguments.
+ The items of <em>argu</em> are its values from 1 to its <code>n</code> field or its
+ length, so a list made with <code>table.pack</code> keeps its trailing nils.
+
+    <h3>Signature:</h3>
+    <ul>
+         apply(callable, table)
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">fn</span>
+            <span class="types"><span class="type">function</span></span>
+         function to call
+        </li>
+        <li><span class="parameter">argu</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.5/manual.html#6.7">table</a></span>
+         list of arguments for <em>fn</em>
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        the results of calling <em>fn</em>
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <li><a href="../modules/std.functional.init.html#call">call</a></li>
+         <li><a href="../modules/std.functional.init.html#force">force</a></li>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="function-name">apply</span>(<span class="global">math</span>.max, {<span class="number">3</span>, <span class="number">9</span>, <span class="number">4</span>})  <span class="comment">--&gt; 9</span></pre>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "bind"></a>
     <strong>bind (fn, argt)</strong>
     </dt>
@@ -2051,6 +2464,49 @@ options = <span class="function-name">merged</span>(defaults, user_options)</pre
     <h3>Usage:</h3>
     <ul>
         <pre class="example">cube = <span class="function-name">bind</span>(std.functional.operator.pow, {[<span class="number">2</span>] = <span class="number">3</span>})</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "call"></a>
+    <strong>call (fn, ...)</strong>
+    </dt>
+    <dd>
+    Call a function with the arguments.
+ Unlike <a href="../modules/std.functional.init.html#force">force</a>, this is an error if <em>fn</em> cannot be called.
+
+    <h3>Signature:</h3>
+    <ul>
+         call(callable, <?any...>)
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">fn</span>
+            <span class="types"><span class="type">function</span></span>
+         function to call
+        </li>
+        <li><span class="parameter">...</span>
+         arguments for <em>fn</em>
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        the results of calling <em>fn</em>
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <li><a href="../modules/std.functional.init.html#apply">apply</a></li>
+         <li><a href="../modules/std.functional.init.html#force">force</a></li>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="function-name">call</span>(<span class="global">string</span>.rep, <span class="string">'ab'</span>, <span class="number">3</span>)  <span class="comment">--&gt; 'ababab'</span></pre>
     </ul>
 
 </dd>
@@ -2222,6 +2678,54 @@ options = <span class="function-name">merged</span>(defaults, user_options)</pre
     <ul>
         <pre class="example">add = <span class="function-name">curry</span>(<span class="keyword">function</span>(x, y) <span class="keyword">return</span> x + y <span class="keyword">end</span>, <span class="number">2</span>)
 incr, decr = <span class="function-name">add</span>(<span class="number">1</span>), <span class="function-name">add</span>(-<span class="number">1</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "force"></a>
+    <strong>force (x, ...)</strong>
+    </dt>
+    <dd>
+    Call <em>x</em> with the arguments if it can be called, otherwise return it.
+ A function or a functable is called, and anything else, <code>nil</code> and
+ <code>false</code> included, is returned as it is.  This is how <a href="../modules/std.functional.init.html#case">case</a>,
+ <a href="../modules/std.functional.init.html#choose">choose</a> and <a href="../modules/std.functional.init.html#cond">cond</a> treat their branches, so a branch that is a
+ function is only called when it is selected, and any other value
+ can be a branch too.  Use <a href="../modules/std.functional.init.html#call">call</a> to insist on a function.
+
+    <h3>Signature:</h3>
+    <ul>
+         force(?any, <?any...>)
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+         a function, a functable or any other value
+        </li>
+        <li><span class="parameter">...</span>
+         arguments for <em>x</em>, if it can be called
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        the results of calling <em>x</em>, or <em>x</em> itself
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <li><a href="../modules/std.functional.init.html#call">call</a></li>
+         <li><a href="../modules/std.functional.init.html#apply">apply</a></li>
+         <li><a href="../modules/std.functional.init.html#callable">callable</a></li>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="function-name">force</span>(<span class="keyword">function</span>(n) <span class="keyword">return</span> n + <span class="number">1</span> <span class="keyword">end</span>, <span class="number">1</span>)  <span class="comment">--&gt; 2
+</span><span class="function-name">force</span>(<span class="string">'default'</span>, <span class="number">1</span>)  <span class="comment">--&gt; 'default'</span></pre>
     </ul>
 
 </dd>
@@ -2724,7 +3228,7 @@ otherwise `nil`
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/lunarmodules/ldoc">LDoc 1.5.0</a></i>
-<i style="float:right;">Last updated 2026-10-22 18:10:38 </i>
+<i style="float:right;">Last updated 2026-10-28 08:32:20 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
