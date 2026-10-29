@@ -26,7 +26,7 @@ source = {
 }
 
 build_dependencies = {
-   'luarocks-build-luke >= 0.3',
+   'luarocks-build-luke >= 0.3.1',
 }
 
 build = {
@@ -45,9 +45,8 @@ build = {
 }
 
 test_dependencies = {
-   'ansicolors',
    'luacov',
-   'specl >= 17',
+   'specl >= 17.1',
 }
 
 test = {
